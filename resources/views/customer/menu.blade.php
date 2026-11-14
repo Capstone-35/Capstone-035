@@ -23,9 +23,11 @@
                 <strong class="text-[#1F1A17]">Pesan sebagai Tamu di {{ $table->label }}.</strong> Masuk akun Member untuk mengumpulkan poin & klaim promo.
             </div>
             <div class="flex items-center gap-2 shrink-0">
-                <a href="{{ route('login') }}" class="px-3 py-1.5 rounded-xl bg-[#3B2A20] text-[#FAF6EF] text-xs font-bold hover:bg-[#2A1E17] transition">
+                <button type="button"
+                        onclick="openMemberModal()"
+                        class="px-3 py-1.5 rounded-xl bg-[#3B2A20] text-[#FAF6EF] text-xs font-bold hover:bg-[#2A1E17] transition">
                     Masuk Member
-                </a>
+                </button>
                 <a href="{{ route('register') }}" class="px-3 py-1.5 rounded-xl border border-[#3B2A20] text-[#3B2A20] text-xs font-bold hover:bg-[#E6DED2] transition">
                     Daftar
                 </a>
@@ -143,4 +145,86 @@
         </div>
     @endif
 </div>
+
+@if(!auth()->check())
+    <!-- Modal Pop-up Login / Daftar Member -->
+    <div id="member-prompt-modal"
+         class="{{ ($showMemberModal ?? false) ? 'flex' : 'hidden' }} fixed inset-0 z-50 items-center justify-center p-4 bg-black/60 backdrop-blur-xs transition-opacity duration-200"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="modal-title">
+        <div class="relative w-full max-w-sm sm:max-w-md bg-white rounded-3xl border border-[#E6DED2] p-6 shadow-2xl text-center">
+            <!-- Tombol Tutup X -->
+            <button type="button"
+                    onclick="closeMemberModal()"
+                    aria-label="Tutup"
+                    class="absolute top-4 right-4 w-9 h-9 rounded-full bg-[#FAF6EF] hover:bg-[#F2ECE1] text-[#6F6259] flex items-center justify-center transition focus:outline-none">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+
+            <!-- Status QR Meja -->
+            @if($table)
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#DCFCE7] text-[#166534] text-xs font-extrabold">
+                    <span class="w-2 h-2 rounded-full bg-[#166534]"></span>
+                    QR Meja Terverifikasi • {{ $table->label }}
+                </span>
+            @endif
+
+            <h2 id="modal-title" class="mt-3.5 text-xl font-extrabold text-[#1F1A17]">
+                Selamat Datang di 774 HUB
+            </h2>
+            <p class="mt-1.5 text-xs sm:text-sm text-[#6F6259] leading-relaxed">
+                Punya akun Member? Masuk untuk mengumpulkan poin loyalti & menikmati diskon promo eksklusif.
+            </p>
+
+            <div class="mt-5 space-y-2.5">
+                <a href="{{ route('login') }}"
+                   class="flex items-center justify-center w-full min-h-[46px] rounded-xl bg-[#3B2A20] text-[#FAF6EF] text-sm font-bold hover:bg-[#2A1E17] transition shadow-sm">
+                    Masuk sebagai Member
+                </a>
+                <a href="{{ route('register') }}"
+                   class="flex items-center justify-center w-full min-h-[46px] rounded-xl bg-[#A9552F] text-white text-sm font-bold hover:bg-[#8E4423] transition shadow-sm">
+                    Daftar Member Baru
+                </a>
+                <button type="button"
+                        onclick="closeMemberModal()"
+                        class="w-full min-h-[44px] rounded-xl border border-[#D6CBBC] text-[#3B2A20] text-xs sm:text-sm font-bold hover:bg-[#FAF6EF] transition">
+                    Lanjut Pesan sebagai Tamu (Guest) →
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openMemberModal() {
+            const modal = document.getElementById('member-prompt-modal');
+            if (modal) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            }
+        }
+
+        function closeMemberModal() {
+            const modal = document.getElementById('member-prompt-modal');
+            if (modal) {
+                modal.classList.remove('flex');
+                modal.classList.add('hidden');
+            }
+        }
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeMemberModal();
+            }
+        });
+
+        document.getElementById('member-prompt-modal')?.addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeMemberModal();
+            }
+        });
+    </script>
+@endif
 @endsection

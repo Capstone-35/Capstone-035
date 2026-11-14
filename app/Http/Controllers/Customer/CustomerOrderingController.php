@@ -74,8 +74,14 @@ class CustomerOrderingController extends Controller
             $request->session()->put('ordering_mode', auth()->check() ? 'member' : 'guest');
         }
 
-        return redirect()->route('menu.index')
+        $redirect = redirect()->route('menu.index')
             ->with('toast_success', "QR Meja Terverifikasi • {$table->label}. Silakan pilih menu pesanan Anda.");
+
+        if (! auth()->check()) {
+            $redirect->with('prompt_member_modal', true);
+        }
+
+        return $redirect;
     }
 
     public function continueAsGuest(Request $request, string $qr_token): RedirectResponse
@@ -137,6 +143,7 @@ class CustomerOrderingController extends Controller
             ->get();
 
         $cartSummary = $this->getCartSummary($request);
+        $showMemberModal = (! auth()->check()) && (session('prompt_member_modal', false) || $request->boolean('auth_prompt'));
 
         return view('customer.menu', [
             'table' => $table,
@@ -145,6 +152,7 @@ class CustomerOrderingController extends Controller
             'selectedCategory' => $selectedCategory,
             'search' => $search,
             'cartSummary' => $cartSummary,
+            'showMemberModal' => $showMemberModal,
         ]);
     }
 
