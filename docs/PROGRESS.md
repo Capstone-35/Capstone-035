@@ -1,0 +1,12 @@
+# Project Progress Tracker (`PROGRESS.md`)
+
+| Phase | Scope | Status | Deliverables / Evidence |
+|---|---|---|---|
+| **Phase 0** | Repository Inspection | **Completed** | [docs/REPO_AUDIT.md](file:///d:/xampp/htdocs/774%20HUB/docs/REPO_AUDIT.md) |
+| **Phase 1** | System Planning & Design System Specification | **Completed** | [docs/DECISIONS.md](file:///d:/xampp/htdocs/774%20HUB/docs/DECISIONS.md), [docs/OPEN_QUESTIONS.md](file:///d:/xampp/htdocs/774%20HUB/docs/OPEN_QUESTIONS.md), [docs/ERD.md](file:///d:/xampp/htdocs/774%20HUB/docs/ERD.md), [docs/PERMISSIONS.md](file:///d:/xampp/htdocs/774%20HUB/docs/PERMISSIONS.md), [docs/ROUTES.md](file:///d:/xampp/htdocs/774%20HUB/docs/ROUTES.md) |
+| **Phase 2** | Foundation (Migrations, Models, RBAC, Auth, Base Seeders, Design Tokens & `/styleguide`) | **Completed** | 20 domain tables in migration, 19 Eloquent models, Spatie RBAC with 6 roles & 27 permissions, Staff & Member auth with UU PDP consent, [resources/views/styleguide.blade.php](file:///d:/xampp/htdocs/774%20HUB/resources/views/styleguide.blade.php) |
+| **Phase 3** | Iteration 1 — Ordering, Checkout, Payment (Modules A, B, C, D) | **Completed** | QR landing, Menu, Cart, Checkout, `OrderPricingService`, `OrderStateMachine`, Cash confirm, Mock QRIS + Webhook with HMAC SHA-256 signature verification |
+| **Phase 4** | Iteration 2 — POS and KDS (Modules E, F) | **Completed** | POS dashboard & two-pane manual order, 3-column KDS dark mode board with ≤ 3s polling, quality check confirmation dialog, handover verification with 4-char `order_code` |
+| **Phase 5** | Iteration 3 — Invoice, Loyalty, Promo, RFM (Modules G, H, I, J) | **Completed** | Digital invoice generation + retry queue job (max 3 tries), `point_ledger` with 1 pt / Rp10.000, reward redemption, RFM 90-day calculation, 6 Behavioral Promotion rules |
+| **Phase 6** | Iteration 4 — Reports & Hardening (Module K, Security, NFRs) | **Completed** | Manager & Owner dashboards, daily/weekly/monthly revenue reports with real DB queries, 30-min idle timeout middleware, 50 automated tests (100% pass) in `tests/Feature/` and `tests/Unit/` |
+| **Phase 7** | Demo Data, Documentation & Final DoD Audit | **Completed** | 110-day demo seeder (~450 orders, 40 members, 30 products, 12 tables), [docs/TEST_REPORT.md](file:///d:/xampp/htdocs/774%20HUB/docs/TEST_REPORT.md), [docs/UAT_SCRIPTS.md](file:///d:/xampp/htdocs/774%20HUB/docs/UAT_SCRIPTS.md), [docs/KNOWN_LIMITATIONS.md](file:///d:/xampp/htdocs/774%20HUB/docs/KNOWN_LIMITATIONS.md), [README.md](file:///d:/xampp/htdocs/774%20HUB/README.md) |

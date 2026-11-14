@@ -1,11 +1,68 @@
 @import 'tailwindcss';
+@import '@fontsource/plus-jakarta-sans/400.css';
+@import '@fontsource/plus-jakarta-sans/500.css';
+@import '@fontsource/plus-jakarta-sans/600.css';
+@import '@fontsource/plus-jakarta-sans/700.css';
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 @source '../**/*.blade.php';
 @source '../**/*.js';
 
+:root {
+    --bg: #FAF6EF;
+    --surface: #FFFFFF;
+    --surface-muted: #EFE6D8;
+    --primary: #3B2A20;
+    --primary-hover: #2E2019;
+    --text: #2A2623;
+    --text-muted: #6B625B;
+    --accent: #A9552F;
+    --border: #E3D7C6;
+    --success: #2F663A;
+    --warning: #8C5B12;
+    --danger: #9B3122;
+    --info: #2C5673;
+}
+
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-sans: 'Plus Jakarta Sans', 'Inter', ui-sans-serif, system-ui, sans-serif;
+    --color-ivory: #FAF6EF;
+    --color-surface: #FFFFFF;
+    --color-beige: #EFE6D8;
+    --color-espresso: #3B2A20;
+    --color-espresso-hover: #2E2019;
+    --color-charcoal: #2A2623;
+    --color-muted: #6B625B;
+    --color-terracotta: #A9552F;
+    --color-hairline: #E3D7C6;
+    --color-status-success: #2F663A;
+    --color-status-warning: #8C5B12;
+    --color-status-danger: #9B3122;
+    --color-status-info: #2C5673;
+}
+
+@layer base {
+    html, body {
+        background-color: var(--bg);
+        color: var(--text);
+        font-family: var(--font-sans);
+        font-size: 16px;
+        line-height: 1.5;
+        -webkit-font-smoothing: antialiased;
+    }
+
+    *:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, ::before, ::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
 }

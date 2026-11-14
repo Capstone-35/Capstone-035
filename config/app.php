@@ -13,7 +13,7 @@ return [
     |
     */
 
-    'name' => env('APP_NAME', 'Laravel'),
+    'name' => env('APP_NAME', '774 HUB'),
 
     /*
     |--------------------------------------------------------------------------
@@ -65,7 +65,13 @@ return [
     |
     */
 
-    'timezone' => 'UTC',
+    'timezone' => env('APP_TIMEZONE', 'Asia/Jakarta'),
+
+    'demo_mode' => (bool) env('APP_DEMO_MODE', true),
+    'payment_driver' => env('PAYMENT_DRIVER', 'mock'),
+    'payment_sandbox_ui' => (bool) env('PAYMENT_SANDBOX_UI', true),
+    'payment_webhook_secret' => env('PAYMENT_WEBHOOK_SECRET', '774hub-webhook-secret-key'),
+    'whatsapp_driver' => env('WHATSAPP_DRIVER', 'mock'),
 
     /*
     |--------------------------------------------------------------------------
@@ -78,11 +84,11 @@ return [
     |
     */
 
-    'locale' => env('APP_LOCALE', 'en'),
+    'locale' => env('APP_LOCALE', 'id'),
 
-    'fallback_locale' => env('APP_FALLBACK_LOCALE', 'en'),
+    'fallback_locale' => env('APP_FALLBACK_LOCALE', 'id'),
 
-    'faker_locale' => env('APP_FAKER_LOCALE', 'en_US'),
+    'faker_locale' => env('APP_FAKER_LOCALE', 'id_ID'),
 
     /*
     |--------------------------------------------------------------------------
