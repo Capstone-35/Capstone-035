@@ -17,6 +17,20 @@
                 @endforeach
             </div>
         </div>
+    @elseif(!auth()->check())
+        <div class="rounded-2xl bg-[#F2ECE1] border border-[#E6DED2] p-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+            <div class="text-[#6F6259]">
+                <strong class="text-[#1F1A17]">Pesan sebagai Tamu di {{ $table->label }}.</strong> Masuk akun Member untuk mengumpulkan poin & klaim promo.
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+                <a href="{{ route('login') }}" class="px-3 py-1.5 rounded-xl bg-[#3B2A20] text-[#FAF6EF] text-xs font-bold hover:bg-[#2A1E17] transition">
+                    Masuk Member
+                </a>
+                <a href="{{ route('register') }}" class="px-3 py-1.5 rounded-xl border border-[#3B2A20] text-[#3B2A20] text-xs font-bold hover:bg-[#E6DED2] transition">
+                    Daftar
+                </a>
+            </div>
+        </div>
     @endif
 
     <!-- Search Bar -->

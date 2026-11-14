@@ -52,8 +52,9 @@ class CustomerOrderingController extends Controller
 
     /**
      * A1 QR Landing: /t/{qr_token} (FR-01, BPMN Step 1–2)
+     * Directly binds table to session and redirects to menu catalog.
      */
-    public function scanTable(Request $request, string $qr_token): View
+    public function scanTable(Request $request, string $qr_token): View|RedirectResponse
     {
         $table = DiningTable::query()
             ->where('qr_token', $qr_token)
@@ -69,9 +70,12 @@ class CustomerOrderingController extends Controller
         $request->session()->put('qr_table_label', $table->label);
         $request->session()->put('qr_token', $table->qr_token);
 
-        return view('customer.qr-landing', [
-            'table' => $table,
-        ]);
+        if (! $request->session()->has('ordering_mode')) {
+            $request->session()->put('ordering_mode', auth()->check() ? 'member' : 'guest');
+        }
+
+        return redirect()->route('menu.index')
+            ->with('toast_success', "QR Meja Terverifikasi • {$table->label}. Silakan pilih menu pesanan Anda.");
     }
 
     public function continueAsGuest(Request $request, string $qr_token): RedirectResponse
