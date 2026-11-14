@@ -62,10 +62,15 @@ class OrderingTest extends TestCase
     public function test_scan_valid_qr_sets_session_and_shows_menu(): void
     {
         $response = $this->get("/t/{$this->table->qr_token}");
-        $response->assertStatus(200);
-        $response->assertSee('Meja 05');
+        $response->assertRedirect('/menu');
+        $this->assertEquals($this->table->id, session('qr_table_id'));
+        $this->assertEquals($this->table->qr_token, session('qr_token'));
 
-        // Customer chooses to continue as guest
+        $followResponse = $this->followRedirects($response);
+        $followResponse->assertStatus(200);
+        $followResponse->assertSee('Meja 05');
+
+        // Customer can also use continue as guest endpoint directly
         $continueResponse = $this->post("/t/{$this->table->qr_token}/guest");
         $continueResponse->assertRedirect('/menu');
         $this->assertEquals($this->table->id, session('qr_table_id'));
