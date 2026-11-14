@@ -147,50 +147,52 @@
 </div>
 
 @if(!auth()->check())
-    <!-- Modal Pop-up Login / Daftar Member -->
+    <!-- Modal Pop-up Login / Daftar Member (Mobile Optimized) -->
     <div id="member-prompt-modal"
-         class="{{ ($showMemberModal ?? false) ? 'flex' : 'hidden' }} fixed inset-0 z-50 items-center justify-center p-4 bg-black/60 backdrop-blur-xs transition-opacity duration-200"
+         class="{{ ($showMemberModal ?? false) ? 'flex' : 'hidden' }} fixed inset-0 z-50 items-center justify-center p-4 bg-black/65 backdrop-blur-sm transition-opacity duration-200"
+         style="background-color: rgba(0, 0, 0, 0.65);"
          role="dialog"
          aria-modal="true"
          aria-labelledby="modal-title">
-        <div class="relative w-full max-w-sm sm:max-w-md bg-white rounded-3xl border border-[#E6DED2] p-6 shadow-2xl text-center">
+        <div class="relative w-full max-w-[340px] sm:max-w-[380px] bg-white rounded-2xl border border-[#E6DED2] p-5 shadow-2xl text-center"
+             style="max-width: min(90vw, 380px);">
             <!-- Tombol Tutup X -->
             <button type="button"
                     onclick="closeMemberModal()"
                     aria-label="Tutup"
-                    class="absolute top-4 right-4 w-9 h-9 rounded-full bg-[#FAF6EF] hover:bg-[#F2ECE1] text-[#6F6259] flex items-center justify-center transition focus:outline-none">
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    class="absolute top-3 right-3 w-8 h-8 rounded-full bg-[#FAF6EF] hover:bg-[#F2ECE1] text-[#6F6259] flex items-center justify-center transition focus:outline-none">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
                 </svg>
             </button>
 
             <!-- Status QR Meja -->
             @if($table)
-                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#DCFCE7] text-[#166534] text-xs font-extrabold">
-                    <span class="w-2 h-2 rounded-full bg-[#166534]"></span>
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#DCFCE7] text-[#166534] text-[11px] font-extrabold">
+                    <span class="w-1.5 h-1.5 rounded-full bg-[#166534]"></span>
                     QR Meja Terverifikasi • {{ $table->label }}
                 </span>
             @endif
 
-            <h2 id="modal-title" class="mt-3.5 text-xl font-extrabold text-[#1F1A17]">
+            <h2 id="modal-title" class="mt-2.5 text-lg font-extrabold text-[#1F1A17]">
                 Selamat Datang di 774 HUB
             </h2>
-            <p class="mt-1.5 text-xs sm:text-sm text-[#6F6259] leading-relaxed">
-                Punya akun Member? Masuk untuk mengumpulkan poin loyalti & menikmati diskon promo eksklusif.
+            <p class="mt-1 text-xs text-[#6F6259] leading-relaxed">
+                Punya akun Member? Masuk untuk mengumpulkan poin loyalti & menikmati promo diskon eksklusif.
             </p>
 
-            <div class="mt-5 space-y-2.5">
+            <div class="mt-4 space-y-2">
                 <a href="{{ route('login') }}"
-                   class="flex items-center justify-center w-full min-h-[46px] rounded-xl bg-[#3B2A20] text-[#FAF6EF] text-sm font-bold hover:bg-[#2A1E17] transition shadow-sm">
+                   class="flex items-center justify-center w-full min-h-[44px] rounded-xl bg-[#3B2A20] text-[#FAF6EF] text-xs sm:text-sm font-bold hover:bg-[#2A1E17] transition shadow-sm">
                     Masuk sebagai Member
                 </a>
                 <a href="{{ route('register') }}"
-                   class="flex items-center justify-center w-full min-h-[46px] rounded-xl bg-[#A9552F] text-white text-sm font-bold hover:bg-[#8E4423] transition shadow-sm">
+                   class="flex items-center justify-center w-full min-h-[44px] rounded-xl bg-[#A9552F] text-white text-xs sm:text-sm font-bold hover:bg-[#8E4423] transition shadow-sm">
                     Daftar Member Baru
                 </a>
                 <button type="button"
                         onclick="closeMemberModal()"
-                        class="w-full min-h-[44px] rounded-xl border border-[#D6CBBC] text-[#3B2A20] text-xs sm:text-sm font-bold hover:bg-[#FAF6EF] transition">
+                        class="w-full min-h-[42px] rounded-xl border border-[#D6CBBC] text-[#3B2A20] text-xs font-bold hover:bg-[#FAF6EF] transition">
                     Lanjut Pesan sebagai Tamu (Guest) →
                 </button>
             </div>
