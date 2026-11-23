@@ -24,7 +24,7 @@
                 </a>
             </div>
 
-            <div class="flex flex-wrap items-center gap-2.5">
+            <div class="flex flex-wrap items-center gap-2">
                 <span class="px-3 py-1.5 rounded-xl bg-[#F2ECE1] border border-[#E6DED2] text-[#3B2A20] font-bold">
                     Periode Aktif: <strong class="text-[#A9552F]">{{ $periodLabel }}</strong>
                 </span>
@@ -36,13 +36,29 @@
                         'group_by' => $activeGroupBy ?? null,
                         'from' => $dateFrom,
                         'to' => $dateTo,
-                        'format' => 'csv',
+                        'format' => 'excel',
                     ]) }}"
-                   class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#1F7A4C] text-white font-extrabold hover:bg-emerald-800 transition shadow-xs">
+                   class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#1F7A4C] text-white font-extrabold hover:bg-emerald-800 transition shadow-xs">
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                     </svg>
-                    <span>Ekspor Laporan Aktif (CSV)</span>
+                    <span>Unduh Excel (.xls)</span>
+                </a>
+                <a href="{{ route('manager.reports.index', [
+                        'period' => $period,
+                        'month' => $month ?? null,
+                        'month_from' => $monthFrom ?? null,
+                        'month_to' => $monthTo ?? null,
+                        'group_by' => $activeGroupBy ?? null,
+                        'from' => $dateFrom,
+                        'to' => $dateTo,
+                        'format' => 'csv',
+                    ]) }}"
+                   class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#3B2A20] text-[#FAF6EF] font-extrabold hover:bg-[#2A1E17] transition shadow-xs">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    <span>Unduh CSV</span>
                 </a>
             </div>
         </div>
@@ -86,15 +102,20 @@
 
                     <div class="flex items-center gap-1.5">
                         <button type="submit"
-                                class="px-3.5 py-2 rounded-xl bg-[#3B2A20] text-[#FAF6EF] font-bold hover:bg-[#2A1E17] transition cursor-pointer">
+                                class="px-3 py-2 rounded-xl bg-[#3B2A20] text-[#FAF6EF] font-bold hover:bg-[#2A1E17] transition cursor-pointer">
                             Tampilkan
                         </button>
-                        <button type="submit" name="format" value="csv"
-                                class="inline-flex items-center gap-1 px-3 py-2 rounded-xl bg-[#1F7A4C] text-white font-bold hover:bg-emerald-800 transition cursor-pointer"
-                                title="Unduh CSV untuk bulan yang dipilih">
+                        <button type="submit" name="format" value="excel"
+                                class="inline-flex items-center gap-1 px-2.5 py-2 rounded-xl bg-[#1F7A4C] text-white font-bold hover:bg-emerald-800 transition cursor-pointer"
+                                title="Unduh Tabel Excel (.xls) rapi untuk bulan ini">
                             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                             </svg>
+                            <span>Excel</span>
+                        </button>
+                        <button type="submit" name="format" value="csv"
+                                class="inline-flex items-center gap-1 px-2.5 py-2 rounded-xl border border-[#3B2A20] text-[#3B2A20] bg-white font-bold hover:bg-[#F2ECE1] transition cursor-pointer"
+                                title="Unduh CSV untuk bulan yang dipilih">
                             <span>CSV</span>
                         </button>
                     </div>
@@ -165,15 +186,20 @@
 
                     <div class="flex items-center gap-1.5">
                         <button type="submit"
-                                class="px-3.5 py-2 rounded-xl bg-[#3B2A20] text-[#FAF6EF] font-bold hover:bg-[#2A1E17] transition cursor-pointer">
+                                class="px-3 py-2 rounded-xl bg-[#3B2A20] text-[#FAF6EF] font-bold hover:bg-[#2A1E17] transition cursor-pointer">
                             Tampilkan Rentang
                         </button>
-                        <button type="submit" name="format" value="csv"
-                                class="inline-flex items-center gap-1 px-3 py-2 rounded-xl bg-[#1F7A4C] text-white font-bold hover:bg-emerald-800 transition cursor-pointer"
-                                title="Unduh CSV untuk rentang bulan yang dipilih">
+                        <button type="submit" name="format" value="excel"
+                                class="inline-flex items-center gap-1 px-2.5 py-2 rounded-xl bg-[#1F7A4C] text-white font-bold hover:bg-emerald-800 transition cursor-pointer"
+                                title="Unduh Tabel Excel (.xls) rapi untuk rentang bulan ini">
                             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                             </svg>
+                            <span>Excel</span>
+                        </button>
+                        <button type="submit" name="format" value="csv"
+                                class="inline-flex items-center gap-1 px-2.5 py-2 rounded-xl border border-[#3B2A20] text-[#3B2A20] bg-white font-bold hover:bg-[#F2ECE1] transition cursor-pointer"
+                                title="Unduh CSV untuk rentang bulan yang dipilih">
                             <span>CSV</span>
                         </button>
                     </div>
