@@ -56,12 +56,20 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
             <div>
                 <input type="hidden" name="is_available" value="0">
                 <label class="p-3.5 rounded-xl border border-[#E6DED2] bg-[#FAF6EF] flex items-center gap-2 cursor-pointer font-bold">
                     <input type="checkbox" name="is_available" value="1" {{ old('is_available', $product->is_available) ? 'checked' : '' }} class="rounded text-[#1F7A4C]">
-                    <span>Tersedia untuk Dipesan (Stok Ada)</span>
+                    <span>Tersedia (Stok Ada)</span>
+                </label>
+            </div>
+
+            <div>
+                <input type="hidden" name="is_featured" value="0">
+                <label class="p-3.5 rounded-xl border border-[#FCD34D] bg-[#FEF3C7]/40 flex items-center gap-2 cursor-pointer font-bold">
+                    <input type="checkbox" name="is_featured" value="1" {{ old('is_featured', $product->is_featured) ? 'checked' : '' }} class="rounded text-[#A9552F]">
+                    <span>★ Menu Andalan</span>
                 </label>
             </div>
 
@@ -69,7 +77,7 @@
                 <input type="hidden" name="is_active" value="0">
                 <label class="p-3.5 rounded-xl border border-[#E6DED2] bg-[#FAF6EF] flex items-center gap-2 cursor-pointer font-bold">
                     <input type="checkbox" name="is_active" value="1" {{ old('is_active', $product->is_active ?? true) ? 'checked' : '' }} class="rounded text-[#3B2A20]">
-                    <span>Aktif di Katalog Menu</span>
+                    <span>Aktif di Katalog</span>
                 </label>
             </div>
         </div>

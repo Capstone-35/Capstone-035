@@ -91,87 +91,30 @@ class DemoDataSeeder extends Seeder
             $memberUsers[$i] = $mbr;
         }
 
-        // 3. Categories (5 Categories)
-        $categoriesData = [
-            ['name' => 'Kopi Berbasis Espresso', 'slug' => 'kopi-espresso', 'sort_order' => 1],
-            ['name' => 'Manual Brew Spesialti', 'slug' => 'manual-brew', 'sort_order' => 2],
-            ['name' => 'Non-Kopi & Teh Artisan', 'slug' => 'non-kopi-artisan', 'sort_order' => 3],
-            ['name' => 'Makanan Berat & Pasta', 'slug' => 'makanan-berat', 'sort_order' => 4],
-            ['name' => 'Camilan & Pastry', 'slug' => 'camilan-pastry', 'sort_order' => 5],
+        // 3 & 4. Seed Real 774 HUB Menu Catalog (10 Categories, 44 Products)
+        $this->call(MenuCatalogSeeder::class);
+
+        $allProducts = Product::query()
+            ->where('is_active', true)
+            ->where('is_available', true)
+            ->orderBy('id')
+            ->get()
+            ->all();
+
+        $featuredSlugs = [
+            'butterscotch-best-seller',
+            'earl-grey-milk',
+            'st-ruby',
+            'chicken-karaage-bowl',
+            'mix-platter',
         ];
-
-        $categories = [];
-        foreach ($categoriesData as $cData) {
-            $categories[$cData['slug']] = Category::query()->updateOrCreate(
-                ['slug' => $cData['slug']],
-                [
-                    'name' => $cData['name'],
-                    'sort_order' => $cData['sort_order'],
-                    'is_active' => true,
-                    'is_demo' => true,
-                ]
-            );
-        }
-
-        // 4. Products (30 Realistic Products)
-        $productsData = [
-            // Kopi Espresso
-            ['cat' => 'kopi-espresso', 'name' => 'Kopi Susu Gula Aren 774', 'price' => 22000, 'desc' => 'Espresso ganda, fresh milk, dan sirup gula aren organik.'],
-            ['cat' => 'kopi-espresso', 'name' => 'Americano Panas / Dingin', 'price' => 18000, 'desc' => 'Ekstraksi espresso murni dengan air mineral.'],
-            ['cat' => 'kopi-espresso', 'name' => 'Caffe Latte Vanilla', 'price' => 26000, 'desc' => 'Espresso lembut berpadu steamed milk dan vanilla extract.'],
-            ['cat' => 'kopi-espresso', 'name' => 'Caramel Macchiato', 'price' => 28000, 'desc' => 'Espresso dengan saus karamel leleh dan susu gurih.'],
-            ['cat' => 'kopi-espresso', 'name' => 'Cappuccino Cinnamon', 'price' => 25000, 'desc' => 'Busa susu tebal dengan taburan kayu manis asli.'],
-            ['cat' => 'kopi-espresso', 'name' => 'Espresso Single Shot', 'price' => 14000, 'desc' => 'Single shot blend Arabika Robusta 774 House Blend.'],
-
-            // Manual Brew
-            ['cat' => 'manual-brew', 'name' => 'V60 Gayo Natural', 'price' => 28000, 'desc' => 'Notes tropical fruit, medium body, acidity segar.'],
-            ['cat' => 'manual-brew', 'name' => 'V60 Kerinci Honey', 'price' => 28000, 'desc' => 'Notes floral jasmine, sweet honey finish.'],
-            ['cat' => 'manual-brew', 'name' => 'Japanese Iced Drip Flores', 'price' => 30000, 'desc' => 'Seduh manual dingin langsung di atas es batu kristal.'],
-            ['cat' => 'manual-brew', 'name' => 'Aeropress Toraja Sapan', 'price' => 27000, 'desc' => 'Body tebal dengan aroma dark chocolate.'],
-            ['cat' => 'manual-brew', 'name' => 'Cold Brew Bottle 250ml', 'price' => 32000, 'desc' => 'Diseduh dingin 16 jam, siap minum.'],
-            ['cat' => 'manual-brew', 'name' => 'Kalita Wave Bali Kintamani', 'price' => 29000, 'desc' => 'Citrusy notes, clean cup, sweetness tinggi.'],
-
-            // Non-Kopi Artisan
-            ['cat' => 'non-kopi-artisan', 'name' => 'Matcha Latte Uji', 'price' => 28000, 'desc' => 'Bubuk matcha murni dari Uji Kyoto dengan susu segar.'],
-            ['cat' => 'non-kopi-artisan', 'name' => 'Dark Chocolate Artisan', 'price' => 26000, 'desc' => 'Cokelat hitam 70% kakao lokal Sulawesi.'],
-            ['cat' => 'non-kopi-artisan', 'name' => 'Earl Grey Milk Tea', 'price' => 24000, 'desc' => 'Teh hitam bergamot dengan susu dan gula tebu.'],
-            ['cat' => 'non-kopi-artisan', 'name' => 'Lychee Berry Tea Refresher', 'price' => 22000, 'desc' => 'Teh melati dingin dengan buah leci utuh dan sirup beri.'],
-            ['cat' => 'non-kopi-artisan', 'name' => 'Lemon Grass Mint Mocktail', 'price' => 24000, 'desc' => 'Minuman segar serai madu dengan daun mint dingin.'],
-            ['cat' => 'non-kopi-artisan', 'name' => 'Red Velvet Cream Cheese', 'price' => 27000, 'desc' => 'Minuman red velvet lembut dengan foam keju gurih.'],
-
-            // Makanan Berat
-            ['cat' => 'makanan-berat', 'name' => 'Nasi Goreng Kampoeng 774', 'price' => 34000, 'desc' => 'Nasi goreng bumbu terasi, ayam suwir, telur mata sapi, kerupuk.'],
-            ['cat' => 'makanan-berat', 'name' => 'Spaghetti Aglio Olio Tuna', 'price' => 36000, 'desc' => 'Pasta al dente dengan suwiran tuna, bawang putih, dan cabai kering.'],
-            ['cat' => 'makanan-berat', 'name' => 'Rice Bowl Beef Teriyaki', 'price' => 38000, 'desc' => 'Daging sapi iris saus teriyaki gurih manis di atas nasi pulen.'],
-            ['cat' => 'makanan-berat', 'name' => 'Chicken Katsu Curry Rice', 'price' => 37000, 'desc' => 'Fillet ayam krispi dengan kuah kari Jepang kental dan wortel kentang.'],
-            ['cat' => 'makanan-berat', 'name' => 'Spaghetti Creamy Carbonara', 'price' => 38000, 'desc' => 'Saus krim keju gurih dengan smoked beef dan parsley.'],
-            ['cat' => 'makanan-berat', 'name' => 'Nasi Ayam Sambal Matah', 'price' => 35000, 'desc' => 'Ayam krispi potongan dadu dengan sambal matah Bali segar.'],
-
-            // Camilan & Pastry
-            ['cat' => 'camilan-pastry', 'name' => 'Croissant Butter Original', 'price' => 20000, 'desc' => 'Pastry berlapis renyah dengan butter Perancis gurih.'],
-            ['cat' => 'camilan-pastry', 'name' => 'Pain au Chocolat', 'price' => 24000, 'desc' => 'Croissant dengan isian cokelat batang leleh.'],
-            ['cat' => 'camilan-pastry', 'name' => 'Kentang Goreng Truffle Parmigiano', 'price' => 25000, 'desc' => 'French fries renyah beraroma minyak truffle dan taburan keju.'],
-            ['cat' => 'camilan-pastry', 'name' => 'Singkong Goreng Keju Merekah', 'price' => 18000, 'desc' => 'Singkong lembut renyah bertabur keju cheddar parut melimpah.'],
-            ['cat' => 'camilan-pastry', 'name' => 'Churros Cinnamon Sugar (6 pcs)', 'price' => 22000, 'desc' => 'Churros renyah dengan saus cocolan cokelat hangat.'],
-            ['cat' => 'camilan-pastry', 'name' => 'Banana Fritters Caramelized', 'price' => 20000, 'desc' => 'Pisang goreng wijen dengan lelehan karamel.'],
-        ];
-
-        $allProducts = [];
-        foreach ($productsData as $p) {
-            $cat = $categories[$p['cat']];
-            $slug = Str::slug($p['name']);
-            $allProducts[] = Product::query()->updateOrCreate(
-                ['category_id' => $cat->id, 'name' => $p['name']],
-                [
-                    'slug' => $slug,
-                    'price' => $p['price'],
-                    'description' => $p['desc'],
-                    'image_path' => "/images/products/{$slug}.svg",
-                    'is_available' => true,
-                    'is_active' => true,
-                    'is_demo' => true,
-                ]
-            );
+        $weightedProducts = $allProducts;
+        foreach ($allProducts as $prod) {
+            if (in_array($prod->slug, $featuredSlugs, true)) {
+                // Boost real best-sellers in demo historical sales
+                $weightedProducts[] = $prod;
+                $weightedProducts[] = $prod;
+            }
         }
 
         // 5. Dining Tables (12 Meja)
@@ -367,9 +310,9 @@ class DemoDataSeeder extends Seeder
                 $source = rand(1, 10) <= 8 ? 'qr' : 'pos';
                 $paymentMethod = rand(1, 10) <= 6 ? PaymentMethod::Qris : PaymentMethod::Tunai;
 
-                // Select 1 to 4 products
+                // Select 1 to 4 unique products (with weighted chance for real best-sellers)
                 $numItems = rand(1, 4);
-                $selectedProds = collect($allProducts)->random($numItems);
+                $selectedProds = collect($weightedProducts)->shuffle()->unique('id')->take($numItems);
                 $orderItems = [];
                 $subtotal = 0;
 

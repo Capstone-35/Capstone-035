@@ -20,6 +20,7 @@ class Product extends Model
         'price',
         'image_path',
         'is_available',
+        'is_featured',
         'is_active',
         'is_demo',
     ];
@@ -29,6 +30,7 @@ class Product extends Model
         return [
             'price' => 'integer',
             'is_available' => 'boolean',
+            'is_featured' => 'boolean',
             'is_active' => 'boolean',
             'is_demo' => 'boolean',
         ];
