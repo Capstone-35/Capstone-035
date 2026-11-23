@@ -200,4 +200,27 @@ class ReportTest extends TestCase
         $response = $this->actingAs($this->userA)->get("/order/{$orderA->public_token}");
         $response->assertStatus(200);
     }
+
+    public function test_manager_can_filter_reports_by_single_month_and_month_range(): void
+    {
+        // Filter per bulan (Oktober 2026)
+        $response = $this->actingAs($this->manager)->get('/manager/reports?period=per_bulan&month_num=10&year=2026');
+        $response->assertStatus(200);
+        $response->assertSee('Bulan Oktober 2026');
+
+        // Export CSV per bulan
+        $csvResponse = $this->actingAs($this->manager)->get('/manager/reports?period=per_bulan&month_num=10&year=2026&format=csv');
+        $csvResponse->assertStatus(200);
+        $csvResponse->assertHeader('content-disposition', 'attachment; filename=laporan-manager-774hub-bulan-2026-10.csv');
+
+        // Filter rentang bulan (Agustus 2026 s/d November 2026)
+        $rangeResponse = $this->actingAs($this->manager)->get('/manager/reports?period=rentang_bulan&month_from_num=8&year_from=2026&month_to_num=11&year_to=2026');
+        $rangeResponse->assertStatus(200);
+        $rangeResponse->assertSee('Rentang Bulan: Agustus 2026 – November 2026');
+
+        // Export CSV rentang bulan
+        $rangeCsvResponse = $this->actingAs($this->manager)->get('/manager/reports?period=rentang_bulan&month_from_num=8&year_from=2026&month_to_num=11&year_to=2026&format=csv');
+        $rangeCsvResponse->assertStatus(200);
+        $rangeCsvResponse->assertHeader('content-disposition', 'attachment; filename=laporan-manager-774hub-rentang-2026-08-sd-2026-11.csv');
+    }
 }

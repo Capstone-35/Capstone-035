@@ -839,21 +839,88 @@ class ManagerController extends Controller
         $period = (string) $request->query('period', 'bulanan');
         $dateFrom = $request->query('from');
         $dateTo = $request->query('to');
+        $groupBy = $request->query('group_by');
 
-        $resolved = $this->reportService->resolvePeriod($period, $dateFrom, $dateTo);
+        $now = now()->timezone('Asia/Jakarta');
+
+        // Resolve single month filter (YYYY-MM or month_num + year)
+        $month = $request->query('month');
+        if (! $month && $request->filled(['month_num', 'year'])) {
+            $month = sprintf('%04d-%02d', (int) $request->query('year'), max(1, min(12, (int) $request->query('month_num'))));
+        }
+        if (! $month || ! preg_match('/^\d{4}-\d{2}$/', (string) $month)) {
+            $month = $now->format('Y-m');
+        }
+
+        // Resolve month range filter (YYYY-MM or month_from_num + year_from / month_to_num + year_to)
+        $monthFrom = $request->query('month_from');
+        if (! $monthFrom && $request->filled(['month_from_num', 'year_from'])) {
+            $monthFrom = sprintf('%04d-%02d', (int) $request->query('year_from'), max(1, min(12, (int) $request->query('month_from_num'))));
+        }
+        if (! $monthFrom || ! preg_match('/^\d{4}-\d{2}$/', (string) $monthFrom)) {
+            $monthFrom = $now->copy()->subMonths(2)->format('Y-m');
+        }
+
+        $monthTo = $request->query('month_to');
+        if (! $monthTo && $request->filled(['month_to_num', 'year_to'])) {
+            $monthTo = sprintf('%04d-%02d', (int) $request->query('year_to'), max(1, min(12, (int) $request->query('month_to_num'))));
+        }
+        if (! $monthTo || ! preg_match('/^\d{4}-\d{2}$/', (string) $monthTo)) {
+            $monthTo = $now->format('Y-m');
+        }
+
+        $resolved = $this->reportService->resolvePeriod(
+            $period,
+            $dateFrom,
+            $dateTo,
+            (string) $month,
+            (string) $monthFrom,
+            (string) $monthTo,
+            is_string($groupBy) ? $groupBy : null
+        );
+
         $summary = $this->reportService->getSummary($resolved['start'], $resolved['end']);
         $breakdown = $this->reportService->getPeriodBreakdown($resolved['start'], $resolved['end'], $resolved['group']);
         $topProducts = $this->reportService->getTopProducts($resolved['start'], $resolved['end'], 15);
         $categorySales = $this->reportService->getSalesByCategory($resolved['start'], $resolved['end']);
 
-        if ($request->query('format') === 'csv') {
-            return $this->streamCsvReport('laporan-manager-774hub-'.$period.'.csv', $resolved['label'], $summary, $breakdown);
+        if (in_array($request->query('format'), ['csv', 'excel'], true)) {
+            $fileSlug = match ($period) {
+                'per_bulan' => 'bulan-'.$month,
+                'rentang_bulan' => 'rentang-'.$monthFrom.'-sd-'.$monthTo,
+                default => $period,
+            };
+
+            if ($request->query('format') === 'excel') {
+                return $this->streamExcelReport('laporan-manager-774hub-'.$fileSlug.'.xls', $resolved['label'], $summary, $breakdown);
+            }
+
+            return $this->streamCsvReport('laporan-manager-774hub-'.$fileSlug.'.csv', $resolved['label'], $summary, $breakdown);
         }
+
+        [$selectedYear, $selectedMonthNum] = array_map('intval', explode('-', (string) $month));
+        [$selectedYearFrom, $selectedMonthFromNum] = array_map('intval', explode('-', (string) $monthFrom));
+        [$selectedYearTo, $selectedMonthToNum] = array_map('intval', explode('-', (string) $monthTo));
+
+        $currentYear = (int) $now->format('Y');
+        $availableYears = range($currentYear - 3, $currentYear + 1);
 
         return view('manager.reports', [
             'period' => $period,
             'dateFrom' => $resolved['start']->toDateString(),
             'dateTo' => $resolved['end']->toDateString(),
+            'month' => $month,
+            'monthFrom' => $monthFrom,
+            'monthTo' => $monthTo,
+            'selectedMonthNum' => $selectedMonthNum,
+            'selectedYear' => $selectedYear,
+            'selectedMonthFromNum' => $selectedMonthFromNum,
+            'selectedYearFrom' => $selectedYearFrom,
+            'selectedMonthToNum' => $selectedMonthToNum,
+            'selectedYearTo' => $selectedYearTo,
+            'availableMonths' => \App\Domain\Reporting\ReportService::INDONESIAN_MONTHS,
+            'availableYears' => $availableYears,
+            'activeGroupBy' => $resolved['group'],
             'periodLabel' => $resolved['label'],
             'summary' => $summary,
             'breakdown' => $breakdown,
@@ -982,18 +1049,34 @@ class ManagerController extends Controller
     {
         return response()->streamDownload(function () use ($periodLabel, $summary, $breakdown) {
             $out = fopen('php://output', 'w');
-            fputcsv($out, ['774 HUB - Laporan Penjualan & Pendapatan Operasional']);
-            fputcsv($out, ['Periode', $periodLabel]);
-            fputcsv($out, ['Total Transaksi Dibayar/Selesai', $summary['tx_count']]);
-            fputcsv($out, ['Penjualan Kotor (Subtotal)', $summary['gross_sales']]);
-            fputcsv($out, ['Total Diskon Promo/Reward', $summary['total_discount']]);
-            fputcsv($out, ['Total Pajak', $summary['total_tax']]);
-            fputcsv($out, ['Total Pendapatan Bersih', $summary['total_revenue']]);
-            fputcsv($out, ['Pendapatan Tunai', $summary['tunai_revenue']]);
-            fputcsv($out, ['Pendapatan QRIS', $summary['qris_revenue']]);
+
+            // Instruksi sep=, di baris pertama agar Microsoft Excel Windows otomatis memisahkan kolom.
+            fwrite($out, "sep=,\r\n");
+
+            $exportedAt = now()->timezone('Asia/Jakarta')->format('d M Y H:i').' WIB';
+            $csvText = fn (string $val): string => '="'.str_replace('"', '""', $val).'"';
+
+            fputcsv($out, ['774 HUB - LAPORAN PENJUALAN & PENDAPATAN OPERASIONAL']);
+            fputcsv($out, ['Periode Laporan', '', $csvText($periodLabel)]);
+            fputcsv($out, ['Waktu Ekspor', '', $csvText($exportedAt)]);
             fputcsv($out, []);
+
+            // Kolom B dan C dikosongkan pada blok KPI agar teks label di Kolom A tidak terpotong di Excel,
+            // dan nilai menggunakan format teks Excel (="...") agar tidak pernah berubah menjadi #######.
+            fputcsv($out, ['RINGKASAN EKSEKUTIF (KPI)', '', '', 'NILAI']);
+            fputcsv($out, ['Total Transaksi Berhasil', '', '', $csvText($summary['tx_count'].' Transaksi')]);
+            fputcsv($out, ['Rata-rata Nilai Transaksi (AOV)', '', '', $csvText('Rp '.number_format($summary['aov'], 0, ',', '.'))]);
+            fputcsv($out, ['Penjualan Kotor (Subtotal)', '', '', $csvText('Rp '.number_format($summary['gross_sales'], 0, ',', '.'))]);
+            fputcsv($out, ['Total Potongan Diskon Promo/Reward', '', '', $csvText('Rp '.number_format($summary['total_discount'], 0, ',', '.'))]);
+            fputcsv($out, ['Total Pajak Diterima', '', '', $csvText('Rp '.number_format($summary['total_tax'], 0, ',', '.'))]);
+            fputcsv($out, ['Total Pendapatan Bersih', '', '', $csvText('Rp '.number_format($summary['total_revenue'], 0, ',', '.'))]);
+            fputcsv($out, ['Pendapatan via Tunai', '', '', $csvText('Rp '.number_format($summary['tunai_revenue'], 0, ',', '.'))]);
+            fputcsv($out, ['Pendapatan via QRIS', '', '', $csvText('Rp '.number_format($summary['qris_revenue'], 0, ',', '.'))]);
+            fputcsv($out, []);
+
             fputcsv($out, [
-                'Periode',
+                'No',
+                'Periode / Tanggal',
                 'Jumlah Transaksi',
                 'Item Terjual',
                 'Penjualan Kotor (Rp)',
@@ -1006,9 +1089,18 @@ class ManagerController extends Controller
                 'Transaksi Guest',
             ]);
 
-            foreach ($breakdown as $row) {
+            $totalItems = 0;
+            $totalMemberTx = 0;
+            $totalGuestTx = 0;
+
+            foreach ($breakdown as $idx => $row) {
+                $totalItems += (int) $row['items_sold'];
+                $totalMemberTx += (int) $row['member_tx'];
+                $totalGuestTx += (int) $row['guest_tx'];
+
                 fputcsv($out, [
-                    $row['period_label'],
+                    $idx + 1,
+                    $csvText((string) $row['period_label']),
                     $row['tx_count'],
                     $row['items_sold'],
                     $row['gross_sales'],
@@ -1022,9 +1114,120 @@ class ManagerController extends Controller
                 ]);
             }
 
+            fputcsv($out, [
+                '',
+                $csvText('TOTAL KESELURUHAN'),
+                $summary['tx_count'],
+                $totalItems,
+                $summary['gross_sales'],
+                $summary['total_discount'],
+                $summary['total_tax'],
+                $summary['total_revenue'],
+                $summary['tunai_revenue'],
+                $summary['qris_revenue'],
+                $totalMemberTx,
+                $totalGuestTx,
+            ]);
+
             fclose($out);
         }, $filename, [
             'Content-Type' => 'text/csv; charset=UTF-8',
+        ]);
+    }
+
+    protected function streamExcelReport(string $filename, string $periodLabel, array $summary, array $breakdown): StreamedResponse
+    {
+        return response()->streamDownload(function () use ($periodLabel, $summary, $breakdown) {
+            $exportedAt = now()->timezone('Asia/Jakarta')->format('d M Y H:i').' WIB';
+            $totalItems = array_sum(array_column($breakdown, 'items_sold'));
+            $totalMemberTx = array_sum(array_column($breakdown, 'member_tx'));
+            $totalGuestTx = array_sum(array_column($breakdown, 'guest_tx'));
+
+            echo '<!DOCTYPE html><html><head><meta charset="UTF-8">';
+            echo '<style>
+                body { font-family: Calibri, Arial, sans-serif; font-size: 11pt; color: #1F1A17; }
+                .title { font-size: 15pt; font-weight: bold; color: #3B2A20; }
+                .subtitle { font-size: 10pt; color: #6F6259; }
+                table { border-collapse: collapse; width: 100%; margin-top: 12px; }
+                th { background-color: #3B2A20; color: #FAF6EF; font-weight: bold; padding: 8px 10px; border: 1px solid #2A1E17; text-align: center; }
+                td { padding: 6px 10px; border: 1px solid #D6CBBC; }
+                .kpi-label { background-color: #F2ECE1; font-weight: bold; width: 260px; }
+                .kpi-val { font-weight: bold; text-align: right; width: 180px; }
+                .num { text-align: right; mso-number-format:"\#\,\#\#0"; }
+                .center { text-align: center; }
+                .zebra { background-color: #FAF6EF; }
+                .total-row td { background-color: #F2ECE1; font-weight: bold; border-top: 2px solid #3B2A20; border-bottom: 2px solid #3B2A20; }
+            </style></head><body>';
+
+            echo '<table>';
+            echo '<tr><td colspan="12" class="title" style="border:none; padding:4px 0;">774 HUB — LAPORAN PENJUALAN &amp; PENDAPATAN OPERASIONAL</td></tr>';
+            echo '<tr><td colspan="12" class="subtitle" style="border:none; padding:2px 0;"><strong>Periode:</strong> '.e($periodLabel).' &nbsp;|&nbsp; <strong>Dicetak:</strong> '.e($exportedAt).'</td></tr>';
+            echo '<tr><td colspan="12" style="border:none; height:10px;"></td></tr>';
+            echo '</table>';
+
+            echo '<table style="width: auto; margin-bottom: 16px;">';
+            echo '<tr><th colspan="2" style="background-color:#A9552F; text-align:left;">RINGKASAN EKSEKUTIF (KPI)</th></tr>';
+            echo '<tr><td class="kpi-label">Total Transaksi Berhasil</td><td class="kpi-val">'.number_format($summary['tx_count'], 0, ',', '.').' Transaksi</td></tr>';
+            echo '<tr><td class="kpi-label">Rata-rata Nilai Transaksi (AOV)</td><td class="kpi-val">Rp '.number_format($summary['aov'], 0, ',', '.').'</td></tr>';
+            echo '<tr><td class="kpi-label">Penjualan Kotor (Subtotal)</td><td class="kpi-val">Rp '.number_format($summary['gross_sales'], 0, ',', '.').'</td></tr>';
+            echo '<tr><td class="kpi-label">Total Diskon Promo &amp; Reward</td><td class="kpi-val">Rp '.number_format($summary['total_discount'], 0, ',', '.').'</td></tr>';
+            echo '<tr><td class="kpi-label">Total Pajak Diterima</td><td class="kpi-val">Rp '.number_format($summary['total_tax'], 0, ',', '.').'</td></tr>';
+            echo '<tr><td class="kpi-label" style="background-color:#3B2A20; color:#FAF6EF;">Total Pendapatan Bersih</td><td class="kpi-val" style="background-color:#DCFCE7; color:#166534;">Rp '.number_format($summary['total_revenue'], 0, ',', '.').'</td></tr>';
+            echo '<tr><td class="kpi-label">Pendapatan Tunai</td><td class="kpi-val">Rp '.number_format($summary['tunai_revenue'], 0, ',', '.').'</td></tr>';
+            echo '<tr><td class="kpi-label">Pendapatan QRIS</td><td class="kpi-val">Rp '.number_format($summary['qris_revenue'], 0, ',', '.').'</td></tr>';
+            echo '</table>';
+
+            echo '<table>';
+            echo '<thead><tr>
+                <th style="width:45px;">No</th>
+                <th style="width:140px; text-align:left;">Periode / Tanggal</th>
+                <th style="width:110px;">Jumlah Transaksi</th>
+                <th style="width:100px;">Item Terjual</th>
+                <th style="width:145px;">Penjualan Kotor (Rp)</th>
+                <th style="width:125px;">Diskon (Rp)</th>
+                <th style="width:125px;">Pajak (Rp)</th>
+                <th style="width:155px;">Pendapatan Bersih (Rp)</th>
+                <th style="width:135px;">Tunai (Rp)</th>
+                <th style="width:135px;">QRIS (Rp)</th>
+                <th style="width:115px;">Tx Member</th>
+                <th style="width:115px;">Tx Guest</th>
+            </tr></thead><tbody>';
+
+            foreach ($breakdown as $idx => $row) {
+                $rowClass = ($idx % 2 === 1) ? ' class="zebra"' : '';
+                echo '<tr'.$rowClass.'>';
+                echo '<td class="center">'.($idx + 1).'</td>';
+                echo '<td><strong>'.e($row['period_label']).'</strong></td>';
+                echo '<td class="center">'.(int) $row['tx_count'].'</td>';
+                echo '<td class="center">'.(int) $row['items_sold'].'</td>';
+                echo '<td class="num">'.(int) $row['gross_sales'].'</td>';
+                echo '<td class="num">'.(int) $row['discount_amount'].'</td>';
+                echo '<td class="num">'.(int) $row['tax_amount'].'</td>';
+                echo '<td class="num"><strong>'.(int) $row['total_revenue'].'</strong></td>';
+                echo '<td class="num">'.(int) $row['tunai_revenue'].'</td>';
+                echo '<td class="num">'.(int) $row['qris_revenue'].'</td>';
+                echo '<td class="center">'.(int) $row['member_tx'].'</td>';
+                echo '<td class="center">'.(int) $row['guest_tx'].'</td>';
+                echo '</tr>';
+            }
+
+            echo '<tr class="total-row">';
+            echo '<td colspan="2" style="text-align:right;">TOTAL KESELURUHAN</td>';
+            echo '<td class="center">'.(int) $summary['tx_count'].'</td>';
+            echo '<td class="center">'.(int) $totalItems.'</td>';
+            echo '<td class="num">'.(int) $summary['gross_sales'].'</td>';
+            echo '<td class="num">'.(int) $summary['total_discount'].'</td>';
+            echo '<td class="num">'.(int) $summary['total_tax'].'</td>';
+            echo '<td class="num" style="background-color:#DCFCE7; color:#166534;">'.(int) $summary['total_revenue'].'</td>';
+            echo '<td class="num">'.(int) $summary['tunai_revenue'].'</td>';
+            echo '<td class="num">'.(int) $summary['qris_revenue'].'</td>';
+            echo '<td class="center">'.(int) $totalMemberTx.'</td>';
+            echo '<td class="center">'.(int) $totalGuestTx.'</td>';
+            echo '</tr>';
+
+            echo '</tbody></table></body></html>';
+        }, $filename, [
+            'Content-Type' => 'application/vnd.ms-excel; charset=UTF-8',
         ]);
     }
 }
