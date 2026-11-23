@@ -1050,24 +1050,28 @@ class ManagerController extends Controller
         return response()->streamDownload(function () use ($periodLabel, $summary, $breakdown) {
             $out = fopen('php://output', 'w');
 
-            // Instruksi sep=, di baris pertama agar Microsoft Excel Windows (Region Indonesia maupun Internasional)
-            // otomatis memisahkan data ke masing-masing kolom secara rapi.
+            // Instruksi sep=, di baris pertama agar Microsoft Excel Windows otomatis memisahkan kolom.
             fwrite($out, "sep=,\r\n");
 
+            $exportedAt = now()->timezone('Asia/Jakarta')->format('d M Y H:i').' WIB';
+            $csvText = fn (string $val): string => '="'.str_replace('"', '""', $val).'"';
+
             fputcsv($out, ['774 HUB - LAPORAN PENJUALAN & PENDAPATAN OPERASIONAL']);
-            fputcsv($out, ['Periode Laporan', $periodLabel]);
-            fputcsv($out, ['Waktu Ekspor', now()->timezone('Asia/Jakarta')->format('d M Y H:i').' WIB']);
+            fputcsv($out, ['Periode Laporan', '', $csvText($periodLabel)]);
+            fputcsv($out, ['Waktu Ekspor', '', $csvText($exportedAt)]);
             fputcsv($out, []);
 
-            fputcsv($out, ['RINGKASAN EKSEKUTIF (KPI)', 'NILAI']);
-            fputcsv($out, ['Total Transaksi Berhasil', $summary['tx_count'].' Transaksi']);
-            fputcsv($out, ['Rata-rata Nilai Transaksi (AOV)', 'Rp '.number_format($summary['aov'], 0, ',', '.')]);
-            fputcsv($out, ['Penjualan Kotor (Subtotal)', 'Rp '.number_format($summary['gross_sales'], 0, ',', '.')]);
-            fputcsv($out, ['Total Potongan Diskon Promo/Reward', 'Rp '.number_format($summary['total_discount'], 0, ',', '.')]);
-            fputcsv($out, ['Total Pajak Diterima', 'Rp '.number_format($summary['total_tax'], 0, ',', '.')]);
-            fputcsv($out, ['Total Pendapatan Bersih', 'Rp '.number_format($summary['total_revenue'], 0, ',', '.')]);
-            fputcsv($out, ['Pendapatan via Tunai', 'Rp '.number_format($summary['tunai_revenue'], 0, ',', '.')]);
-            fputcsv($out, ['Pendapatan via QRIS', 'Rp '.number_format($summary['qris_revenue'], 0, ',', '.')]);
+            // Kolom B dan C dikosongkan pada blok KPI agar teks label di Kolom A tidak terpotong di Excel,
+            // dan nilai menggunakan format teks Excel (="...") agar tidak pernah berubah menjadi #######.
+            fputcsv($out, ['RINGKASAN EKSEKUTIF (KPI)', '', '', 'NILAI']);
+            fputcsv($out, ['Total Transaksi Berhasil', '', '', $csvText($summary['tx_count'].' Transaksi')]);
+            fputcsv($out, ['Rata-rata Nilai Transaksi (AOV)', '', '', $csvText('Rp '.number_format($summary['aov'], 0, ',', '.'))]);
+            fputcsv($out, ['Penjualan Kotor (Subtotal)', '', '', $csvText('Rp '.number_format($summary['gross_sales'], 0, ',', '.'))]);
+            fputcsv($out, ['Total Potongan Diskon Promo/Reward', '', '', $csvText('Rp '.number_format($summary['total_discount'], 0, ',', '.'))]);
+            fputcsv($out, ['Total Pajak Diterima', '', '', $csvText('Rp '.number_format($summary['total_tax'], 0, ',', '.'))]);
+            fputcsv($out, ['Total Pendapatan Bersih', '', '', $csvText('Rp '.number_format($summary['total_revenue'], 0, ',', '.'))]);
+            fputcsv($out, ['Pendapatan via Tunai', '', '', $csvText('Rp '.number_format($summary['tunai_revenue'], 0, ',', '.'))]);
+            fputcsv($out, ['Pendapatan via QRIS', '', '', $csvText('Rp '.number_format($summary['qris_revenue'], 0, ',', '.'))]);
             fputcsv($out, []);
 
             fputcsv($out, [
@@ -1096,7 +1100,7 @@ class ManagerController extends Controller
 
                 fputcsv($out, [
                     $idx + 1,
-                    $row['period_label'],
+                    $csvText((string) $row['period_label']),
                     $row['tx_count'],
                     $row['items_sold'],
                     $row['gross_sales'],
@@ -1112,7 +1116,7 @@ class ManagerController extends Controller
 
             fputcsv($out, [
                 '',
-                'TOTAL KESELURUHAN',
+                $csvText('TOTAL KESELURUHAN'),
                 $summary['tx_count'],
                 $totalItems,
                 $summary['gross_sales'],
