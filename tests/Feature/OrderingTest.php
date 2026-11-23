@@ -221,4 +221,45 @@ class OrderingTest extends TestCase
         // Correct subtotal must be 3 * 25000 = 75000
         $this->assertEquals(75000, $order->subtotal);
     }
+
+    public function test_menu_renders_grouped_category_sections_for_scrollspy(): void
+    {
+        $secondCategory = Category::create([
+            'name' => 'Camilan & Pastry',
+            'slug' => 'camilan-pastry',
+            'sort_order' => 2,
+            'is_active' => true,
+        ]);
+
+        Product::create([
+            'category_id' => $secondCategory->id,
+            'name' => 'Croissant Butter',
+            'slug' => 'croissant-butter',
+            'price' => 24000,
+            'is_active' => true,
+            'is_available' => true,
+        ]);
+
+        $response = $this->withSession([
+            'qr_table_id' => $this->table->id,
+            'qr_token' => $this->table->qr_token,
+        ])->get('/menu');
+
+        $response->assertStatus(200);
+        $response->assertDontSee('Semua Menu');
+        $response->assertSee('Menu Andalan & Promo', false);
+        $response->assertSee('data-category-chip="menu-andalan"', false);
+        $response->assertSee('data-category-chip="signature-coffee"', false);
+        $response->assertSee('data-category-chip="camilan-pastry"', false);
+        $response->assertSee('data-category-section="menu-andalan"', false);
+        $response->assertSee('data-category-section="signature-coffee"', false);
+        $response->assertSee('data-category-section="camilan-pastry"', false);
+        $response->assertSeeInOrder([
+            'data-category-section="menu-andalan"',
+            'data-category-section="signature-coffee"',
+            'Kopi Susu Gula Aren 774',
+            'data-category-section="camilan-pastry"',
+            'Croissant Butter',
+        ], false);
+    }
 }

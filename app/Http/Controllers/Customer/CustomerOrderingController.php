@@ -124,12 +124,6 @@ class CustomerOrderingController extends Controller
             ->where('is_active', true)
             ->whereHas('category', fn ($q) => $q->where('is_active', true));
 
-        if (! empty($selectedCategory)) {
-            $productsQuery->whereHas('category', function ($q) use ($selectedCategory) {
-                $q->where('slug', $selectedCategory)->orWhere('id', $selectedCategory);
-            });
-        }
-
         if ($search !== '') {
             $productsQuery->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
@@ -138,8 +132,36 @@ class CustomerOrderingController extends Controller
         }
 
         $products = $productsQuery
+            ->withSum('orderItems as total_sold_qty', 'quantity')
             ->orderByDesc('is_available')
             ->orderBy('name')
+            ->get();
+
+        $availableProducts = $products->where('is_available', true)->values();
+        $hasSalesData = $availableProducts->contains(fn (Product $p) => (int) ($p->total_sold_qty ?? 0) > 0);
+
+        if ($hasSalesData) {
+            $featuredProducts = $availableProducts
+                ->sortByDesc(fn (Product $p) => (int) ($p->total_sold_qty ?? 0))
+                ->take(6)
+                ->values();
+        } else {
+            $featuredProducts = $availableProducts
+                ->groupBy('category_id')
+                ->map(fn ($group) => $group->first())
+                ->values()
+                ->take(6);
+
+            if ($featuredProducts->count() < min(4, $availableProducts->count())) {
+                $featuredProducts = $availableProducts->take(6)->values();
+            }
+        }
+
+        $featuredPromotions = Promotion::query()
+            ->where('is_active', true)
+            ->where('rule_type', '!=', PromotionRuleType::ReturnTracking->value)
+            ->orderBy('id')
+            ->take(3)
             ->get();
 
         $cartSummary = $this->getCartSummary($request);
@@ -149,6 +171,8 @@ class CustomerOrderingController extends Controller
             'table' => $table,
             'categories' => $categories,
             'products' => $products,
+            'featuredProducts' => $featuredProducts,
+            'featuredPromotions' => $featuredPromotions,
             'selectedCategory' => $selectedCategory,
             'search' => $search,
             'cartSummary' => $cartSummary,

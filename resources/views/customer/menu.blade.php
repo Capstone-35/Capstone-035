@@ -35,97 +35,255 @@
         </div>
     @endif
 
+    @php
+        $productsByCategory = $products->groupBy('category_id');
+        $activeCategories = $categories->filter(fn ($cat) => $productsByCategory->has($cat->id))->values();
+        $displayCategories = $activeCategories->isNotEmpty() ? $activeCategories : $categories;
+    @endphp
+
     <!-- Search Bar -->
     <form method="GET" action="{{ route('menu.index') }}" class="flex gap-2">
-        @if($selectedCategory)
-            <input type="hidden" name="category" value="{{ $selectedCategory }}">
-        @endif
         <input type="search" name="q" value="{{ $search }}" placeholder="Cari kopi, minuman, makanan..."
                aria-label="Cari menu"
                class="flex-1 min-h-[44px] px-4 py-2 rounded-xl bg-white border border-[#D6CBBC] text-sm focus:outline-none focus:ring-2 focus:ring-[#A9552F]">
+        @if($search !== '')
+            <a href="{{ route('menu.index') }}"
+               class="min-h-[44px] px-3 inline-flex items-center justify-center rounded-xl border border-[#D6CBBC] bg-white text-[#6F6259] text-xs font-bold hover:bg-[#F2ECE1] transition">
+                Reset
+            </a>
+        @endif
         <button type="submit" class="min-h-[44px] px-4 rounded-xl bg-[#3B2A20] text-[#FAF6EF] text-xs font-bold">
             Cari
         </button>
     </form>
 
-    <!-- Category Filter Chips -->
-    <div class="flex items-center gap-2 overflow-x-auto pb-1">
-        <a href="{{ route('menu.index', $search ? ['q' => $search] : []) }}"
-           class="min-h-[40px] px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition {{ empty($selectedCategory) ? 'bg-[#3B2A20] text-[#FAF6EF]' : 'bg-white border border-[#E6DED2] text-[#6F6259]' }}">
-            Semua Menu
-        </a>
-        @foreach($categories as $category)
-            <a href="{{ route('menu.index', array_filter(['category' => $category->slug, 'q' => $search])) }}"
-               class="min-h-[40px] px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition {{ $selectedCategory === $category->slug || (string)$selectedCategory === (string)$category->id ? 'bg-[#3B2A20] text-[#FAF6EF]' : 'bg-white border border-[#E6DED2] text-[#6F6259]' }}">
-                {{ $category->name }}
-            </a>
-        @endforeach
+    <!-- Sticky Category Filter Chips (Scrollspy Navigation) -->
+    <div id="category-nav-wrapper" class="sticky top-16 z-20 -mx-4 px-4 py-2.5 bg-[#FAF6EF]/95 backdrop-blur border-b border-[#E6DED2]/80 transition-shadow">
+        <div id="category-chips-container" class="flex items-center gap-2 overflow-x-auto pb-0.5 scroll-smooth" style="scrollbar-width: none; -ms-overflow-style: none;">
+            @if(($featuredProducts ?? collect())->isNotEmpty() || ($featuredPromotions ?? collect())->isNotEmpty())
+                @php
+                    $isFeaturedSelected = empty($selectedCategory) || $selectedCategory === 'menu-andalan';
+                @endphp
+                <a href="#category-menu-andalan"
+                   data-category-chip="menu-andalan"
+                   aria-current="{{ $isFeaturedSelected ? 'true' : 'false' }}"
+                   class="category-chip min-h-[40px] px-4 py-2 rounded-xl border text-xs font-bold whitespace-nowrap transition inline-flex items-center gap-1.5 {{ $isFeaturedSelected ? 'bg-[#3B2A20] text-[#FAF6EF] border-[#3B2A20] shadow-xs' : 'bg-white border-[#E6DED2] text-[#6F6259] hover:border-[#3B2A20]/40 hover:text-[#1F1A17]' }}">
+                    <svg class="w-3.5 h-3.5 text-[#A9552F] shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                    </svg>
+                    <span>Menu Andalan & Promo</span>
+                </a>
+            @endif
+            @foreach($displayCategories as $category)
+                @php
+                    $isSelected = $selectedCategory === $category->slug || (string) $selectedCategory === (string) $category->id;
+                @endphp
+                <a href="#category-{{ $category->slug }}"
+                   data-category-chip="{{ $category->slug }}"
+                   aria-current="{{ $isSelected ? 'true' : 'false' }}"
+                   class="category-chip min-h-[40px] px-4 py-2 rounded-xl border text-xs font-bold whitespace-nowrap transition inline-flex items-center gap-1.5 {{ $isSelected ? 'bg-[#3B2A20] text-[#FAF6EF] border-[#3B2A20] shadow-xs' : 'bg-white border-[#E6DED2] text-[#6F6259] hover:border-[#3B2A20]/40 hover:text-[#1F1A17]' }}">
+                    <span>{{ $category->name }}</span>
+                </a>
+            @endforeach
+        </div>
     </div>
 
-    <!-- Product Grid -->
+    <!-- Product Sections Grouped by Category -->
     @if($products->isEmpty())
         <x-empty-state
             title="Menu Tidak Ditemukan"
             description="Tidak ada produk yang cocok dengan pencarian atau filter kategori ini."
             :action-url="route('menu.index')"
-            action-label="Lihat Semua Menu"
+            action-label="Reset Pencarian"
         />
     @else
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-            @foreach($products as $product)
-                <div class="bg-white rounded-2xl border border-[#E6DED2] p-4 flex flex-col justify-between shadow-sm {{ !$product->is_available ? 'opacity-65' : '' }}">
-                    <div>
-                        <div class="flex items-start justify-between gap-2">
-                            <span class="text-[11px] font-bold uppercase tracking-wider text-[#A9552F]">
-                                {{ $product->category?->name }}
-                            </span>
-                            @if(!$product->is_available)
-                                <span class="px-2 py-0.5 rounded-full bg-[#FEE2E2] text-[#991B1B] text-[11px] font-bold">
-                                    Habis
-                                </span>
-                            @endif
-                        </div>
-
-                        <a href="{{ route('menu.show', ['product' => $product->slug]) }}" class="block mt-1">
-                            <h2 class="text-base font-extrabold text-[#1F1A17] hover:text-[#A9552F] transition">
-                                {{ $product->name }}
+        <div id="menu-catalog-top" class="space-y-7 pt-1">
+            <!-- Section: Menu Andalan & Promo Spesial -->
+            @if(($featuredProducts ?? collect())->isNotEmpty() || ($featuredPromotions ?? collect())->isNotEmpty())
+                <section id="category-menu-andalan"
+                         data-category-section="menu-andalan"
+                         class="scroll-mt-32">
+                    <div class="flex items-center justify-between mb-3 pb-2 border-b border-[#E6DED2]">
+                        <div class="flex items-center gap-2">
+                            <span class="w-1.5 h-4 rounded-full bg-[#A9552F]"></span>
+                            <h2 class="text-sm sm:text-base font-extrabold text-[#1F1A17] tracking-tight">
+                                Menu Andalan & Promo
                             </h2>
-                        </a>
-
-                        @if($product->description)
-                            <p class="mt-1 text-xs text-[#6F6259] line-clamp-2">
-                                {{ $product->description }}
-                            </p>
-                        @endif
-                    </div>
-
-                    <div class="mt-4 pt-3 border-t border-[#F2ECE1] flex items-center justify-between gap-2">
-                        <div class="text-base font-extrabold text-[#1F1A17] tabular-nums">
-                            {{ $product->formattedPrice() }}
                         </div>
-
-                        @if($product->is_available)
-                            <div class="flex items-center gap-1.5">
-                                <a href="{{ route('menu.show', ['product' => $product->slug]) }}"
-                                   class="min-h-[40px] px-2.5 inline-flex items-center justify-center rounded-xl border border-[#D6CBBC] text-xs font-semibold text-[#3B2A20] hover:bg-[#F2ECE1]">
-                                    Catatan
-                                </a>
-                                <form method="POST" action="{{ route('cart.items.store') }}">
-                                    @csrf
-                                    <input type="hidden" name="product_id" value="{{ $product->id }}">
-                                    <input type="hidden" name="quantity" value="1">
-                                    <button type="submit" class="min-h-[40px] px-3.5 inline-flex items-center justify-center rounded-xl bg-[#3B2A20] text-[#FAF6EF] text-xs font-bold hover:bg-[#2A1E17] transition">
-                                        + Tambah
-                                    </button>
-                                </form>
-                            </div>
-                        @else
-                            <button type="button" disabled class="min-h-[40px] px-3.5 rounded-xl bg-gray-200 text-gray-500 text-xs font-bold cursor-not-allowed">
-                                Tidak Tersedia
-                            </button>
-                        @endif
+                        <span class="px-2.5 py-0.5 rounded-full bg-[#FEF3C7] border border-[#FCD34D] text-[11px] font-extrabold text-[#92400E]">
+                            ★ Favorit Pelanggan
+                        </span>
                     </div>
-                </div>
+
+                    @if(($featuredPromotions ?? collect())->isNotEmpty() && $search === '')
+                        <div class="mb-4 rounded-2xl bg-gradient-to-r from-[#3B2A20] to-[#523A2C] text-[#FAF6EF] p-3.5 shadow-sm">
+                            <div class="flex items-center justify-between gap-2 mb-2.5">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="px-2 py-0.5 rounded-full bg-[#A9552F] text-white text-[10px] font-extrabold uppercase tracking-wider">
+                                        Promo Aktif
+                                    </span>
+                                    <span class="text-xs font-bold text-[#FAF6EF]/90">Penawaran Spesial Hari Ini</span>
+                                </div>
+                                <a href="{{ route('promotions.public') }}" class="text-[11px] font-bold text-[#FCD34D] hover:underline whitespace-nowrap">
+                                    Lihat Semua →
+                                </a>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                @foreach($featuredPromotions as $promo)
+                                    <a href="{{ route('promotions.public') }}"
+                                       class="rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 p-2.5 transition flex flex-col justify-between">
+                                        <div>
+                                            <div class="text-[11px] font-extrabold text-[#FCD34D]">
+                                                {{ $promo->benefitLabel() }}
+                                            </div>
+                                            <div class="text-xs font-bold text-white line-clamp-1 mt-0.5">
+                                                {{ $promo->name }}
+                                            </div>
+                                        </div>
+                                        @if($promo->min_transaction > 0)
+                                            <div class="mt-1.5 text-[10px] text-[#FAF6EF]/75">
+                                                Min. transaksi Rp{{ number_format($promo->min_transaction, 0, ',', '.') }}
+                                            </div>
+                                        @endif
+                                    </a>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
+
+                    @if(($featuredProducts ?? collect())->isNotEmpty())
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                            @foreach($featuredProducts as $product)
+                                <div class="bg-white rounded-2xl border-2 border-[#E6DED2] p-4 flex flex-col justify-between shadow-sm relative overflow-hidden">
+                                    <div>
+                                        <div class="flex items-start justify-between gap-2">
+                                            <span class="text-[11px] font-bold uppercase tracking-wider text-[#A9552F]">
+                                                {{ $product->category?->name }}
+                                            </span>
+                                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#FEF3C7] text-[#92400E] text-[10px] font-extrabold">
+                                                ★ Andalan
+                                            </span>
+                                        </div>
+
+                                        <a href="{{ route('menu.show', ['product' => $product->slug]) }}" class="block mt-1">
+                                            <h3 class="text-base font-extrabold text-[#1F1A17] hover:text-[#A9552F] transition">
+                                                {{ $product->name }}
+                                            </h3>
+                                        </a>
+
+                                        @if($product->description)
+                                            <p class="mt-1 text-xs text-[#6F6259] line-clamp-2">
+                                                {{ $product->description }}
+                                            </p>
+                                        @endif
+                                    </div>
+
+                                    <div class="mt-4 pt-3 border-t border-[#F2ECE1] flex items-center justify-between gap-2">
+                                        <div class="text-base font-extrabold text-[#1F1A17] tabular-nums">
+                                            {{ $product->formattedPrice() }}
+                                        </div>
+
+                                        @if($product->is_available)
+                                            <div class="flex items-center gap-1.5">
+                                                <a href="{{ route('menu.show', ['product' => $product->slug]) }}"
+                                                   class="min-h-[40px] px-2.5 inline-flex items-center justify-center rounded-xl border border-[#D6CBBC] text-xs font-semibold text-[#3B2A20] hover:bg-[#F2ECE1]">
+                                                    Catatan
+                                                </a>
+                                                <form method="POST" action="{{ route('cart.items.store') }}">
+                                                    @csrf
+                                                    <input type="hidden" name="product_id" value="{{ $product->id }}">
+                                                    <input type="hidden" name="quantity" value="1">
+                                                    <button type="submit" class="min-h-[40px] px-3.5 inline-flex items-center justify-center rounded-xl bg-[#3B2A20] text-[#FAF6EF] text-xs font-bold hover:bg-[#2A1E17] transition">
+                                                        + Tambah
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        @endif
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
+                </section>
+            @endif
+
+            @foreach($activeCategories as $category)
+                @php
+                    $categoryProducts = $productsByCategory->get($category->id, collect());
+                @endphp
+                <section id="category-{{ $category->slug }}"
+                         data-category-section="{{ $category->slug }}"
+                         class="scroll-mt-32">
+                    <div class="flex items-center justify-between mb-3 pb-2 border-b border-[#E6DED2]">
+                        <div class="flex items-center gap-2">
+                            <span class="w-1.5 h-4 rounded-full bg-[#A9552F]"></span>
+                            <h2 class="text-sm sm:text-base font-extrabold text-[#1F1A17] tracking-tight">
+                                {{ $category->name }}
+                            </h2>
+                        </div>
+                        <span class="px-2.5 py-0.5 rounded-full bg-[#F2ECE1] border border-[#E6DED2] text-[11px] font-bold text-[#6F6259]">
+                            {{ $categoryProducts->count() }} menu
+                        </span>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                        @foreach($categoryProducts as $product)
+                            <div class="bg-white rounded-2xl border border-[#E6DED2] p-4 flex flex-col justify-between shadow-sm {{ !$product->is_available ? 'opacity-65' : '' }}">
+                                <div>
+                                    <div class="flex items-start justify-between gap-2">
+                                        <span class="text-[11px] font-bold uppercase tracking-wider text-[#A9552F]">
+                                            {{ $product->category?->name }}
+                                        </span>
+                                        @if(!$product->is_available)
+                                            <span class="px-2 py-0.5 rounded-full bg-[#FEE2E2] text-[#991B1B] text-[11px] font-bold">
+                                                Habis
+                                            </span>
+                                        @endif
+                                    </div>
+
+                                    <a href="{{ route('menu.show', ['product' => $product->slug]) }}" class="block mt-1">
+                                        <h3 class="text-base font-extrabold text-[#1F1A17] hover:text-[#A9552F] transition">
+                                            {{ $product->name }}
+                                        </h3>
+                                    </a>
+
+                                    @if($product->description)
+                                        <p class="mt-1 text-xs text-[#6F6259] line-clamp-2">
+                                            {{ $product->description }}
+                                        </p>
+                                    @endif
+                                </div>
+
+                                <div class="mt-4 pt-3 border-t border-[#F2ECE1] flex items-center justify-between gap-2">
+                                    <div class="text-base font-extrabold text-[#1F1A17] tabular-nums">
+                                        {{ $product->formattedPrice() }}
+                                    </div>
+
+                                    @if($product->is_available)
+                                        <div class="flex items-center gap-1.5">
+                                            <a href="{{ route('menu.show', ['product' => $product->slug]) }}"
+                                               class="min-h-[40px] px-2.5 inline-flex items-center justify-center rounded-xl border border-[#D6CBBC] text-xs font-semibold text-[#3B2A20] hover:bg-[#F2ECE1]">
+                                                Catatan
+                                            </a>
+                                            <form method="POST" action="{{ route('cart.items.store') }}">
+                                                @csrf
+                                                <input type="hidden" name="product_id" value="{{ $product->id }}">
+                                                <input type="hidden" name="quantity" value="1">
+                                                <button type="submit" class="min-h-[40px] px-3.5 inline-flex items-center justify-center rounded-xl bg-[#3B2A20] text-[#FAF6EF] text-xs font-bold hover:bg-[#2A1E17] transition">
+                                                    + Tambah
+                                                </button>
+                                            </form>
+                                        </div>
+                                    @else
+                                        <button type="button" disabled class="min-h-[40px] px-3.5 rounded-xl bg-gray-200 text-gray-500 text-xs font-bold cursor-not-allowed">
+                                            Tidak Tersedia
+                                        </button>
+                                    @endif
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </section>
             @endforeach
         </div>
     @endif
@@ -229,4 +387,175 @@
         });
     </script>
 @endif
+
+<script>
+    (function () {
+        const navWrapper = document.getElementById('category-nav-wrapper');
+        const chipsContainer = document.getElementById('category-chips-container');
+        const chips = Array.from(document.querySelectorAll('[data-category-chip]'));
+        const sections = Array.from(document.querySelectorAll('[data-category-section]'));
+
+        if (chips.length === 0 || sections.length === 0) {
+            return;
+        }
+
+        const ACTIVE_CLASSES = ['bg-[#3B2A20]', 'text-[#FAF6EF]', 'border-[#3B2A20]', 'shadow-xs'];
+        const INACTIVE_CLASSES = ['bg-white', 'border-[#E6DED2]', 'text-[#6F6259]', 'hover:border-[#3B2A20]/40', 'hover:text-[#1F1A17]'];
+
+        let currentActiveSlug = null;
+        let isProgrammaticScroll = false;
+        let scrollLockTimer = null;
+        let ticking = false;
+
+        function getStickyOffset() {
+            const header = document.querySelector('header');
+            const headerHeight = header ? header.offsetHeight : 64;
+            const navHeight = navWrapper ? navWrapper.offsetHeight : 56;
+            return headerHeight + navHeight + 12;
+        }
+
+        function setActiveChip(slug, scrollChipBar = true) {
+            if (currentActiveSlug === slug) {
+                return;
+            }
+            currentActiveSlug = slug;
+
+            chips.forEach((chip) => {
+                const chipSlug = chip.getAttribute('data-category-chip');
+                const isActive = chipSlug === slug;
+
+                chip.setAttribute('aria-current', isActive ? 'true' : 'false');
+
+                if (isActive) {
+                    chip.classList.remove(...INACTIVE_CLASSES);
+                    chip.classList.add(...ACTIVE_CLASSES);
+
+                    if (scrollChipBar && chipsContainer) {
+                        const targetLeft = chip.offsetLeft - (chipsContainer.clientWidth / 2) + (chip.offsetWidth / 2);
+                        chipsContainer.scrollTo({
+                            left: Math.max(0, targetLeft),
+                            behavior: 'smooth'
+                        });
+                    }
+                } else {
+                    chip.classList.remove(...ACTIVE_CLASSES);
+                    chip.classList.add(...INACTIVE_CLASSES);
+                }
+            });
+        }
+
+        function scrollToCategory(slug, smooth = true) {
+            isProgrammaticScroll = true;
+            if (scrollLockTimer) {
+                clearTimeout(scrollLockTimer);
+            }
+
+            setActiveChip(slug, true);
+
+            let targetY = 0;
+            const targetSection = document.querySelector(`[data-category-section="${slug}"]`);
+            if (targetSection) {
+                targetY = Math.max(0, targetSection.getBoundingClientRect().top + window.scrollY - getStickyOffset());
+            }
+
+            window.scrollTo({
+                top: targetY,
+                behavior: smooth ? 'smooth' : 'auto'
+            });
+
+            scrollLockTimer = setTimeout(() => {
+                isProgrammaticScroll = false;
+            }, smooth ? 750 : 100);
+        }
+
+        chips.forEach((chip) => {
+            chip.addEventListener('click', function (e) {
+                e.preventDefault();
+                const slug = this.getAttribute('data-category-chip');
+                if (slug) {
+                    scrollToCategory(slug, true);
+                }
+            });
+        });
+
+        function updateScrollspy() {
+            if (navWrapper) {
+                if (window.scrollY > 20) {
+                    navWrapper.classList.add('shadow-xs');
+                } else {
+                    navWrapper.classList.remove('shadow-xs');
+                }
+            }
+
+            if (isProgrammaticScroll) {
+                return;
+            }
+
+            // At the very bottom of the page, highlight the last section
+            const isAtBottom = (window.innerHeight + window.scrollY) >= (document.documentElement.scrollHeight - 25);
+            if (isAtBottom && sections.length > 0) {
+                const lastSlug = sections[sections.length - 1].getAttribute('data-category-section');
+                if (lastSlug) {
+                    setActiveChip(lastSlug, true);
+                    return;
+                }
+            }
+
+            const triggerLine = getStickyOffset() + 40;
+            let activeSlug = sections[0].getAttribute('data-category-section');
+
+            for (const section of sections) {
+                const rect = section.getBoundingClientRect();
+                if (rect.top <= triggerLine) {
+                    activeSlug = section.getAttribute('data-category-section');
+                } else {
+                    break;
+                }
+            }
+
+            if (activeSlug) {
+                setActiveChip(activeSlug, true);
+            }
+        }
+
+        window.addEventListener('scroll', function () {
+            if (!ticking) {
+                window.requestAnimationFrame(function () {
+                    updateScrollspy();
+                    ticking = false;
+                });
+                ticking = true;
+            }
+        }, { passive: true });
+
+        window.addEventListener('scrollend', function () {
+            if (isProgrammaticScroll) {
+                if (scrollLockTimer) {
+                    clearTimeout(scrollLockTimer);
+                }
+                isProgrammaticScroll = false;
+            }
+        }, { passive: true });
+
+        // Handle initial selectedCategory from query string or URL hash
+        const initialSelected = @json($selectedCategory);
+        if (initialSelected) {
+            const matchedSection = sections.find((s) => s.getAttribute('data-category-section') === String(initialSelected));
+            if (matchedSection) {
+                setTimeout(() => {
+                    scrollToCategory(String(initialSelected), true);
+                }, 100);
+            }
+        } else if (window.location.hash && window.location.hash.startsWith('#category-')) {
+            const hashSlug = window.location.hash.replace('#category-', '');
+            if (sections.some((s) => s.getAttribute('data-category-section') === hashSlug)) {
+                setTimeout(() => {
+                    scrollToCategory(hashSlug, true);
+                }, 100);
+            }
+        } else {
+            updateScrollspy();
+        }
+    })();
+</script>
 @endsection
