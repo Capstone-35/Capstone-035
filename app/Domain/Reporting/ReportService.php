@@ -20,12 +20,50 @@ use Illuminate\Support\Facades\DB;
 class ReportService
 {
     /**
-     * Resolves period filter (harian, mingguan, bulanan, custom) into [Carbon $start, Carbon $end, string $groupBy, string $label].
+     * Daftar nama bulan dalam Bahasa Indonesia.
+     *
+     * @var array<int, string>
+     */
+    public const INDONESIAN_MONTHS = [
+        1 => 'Januari',
+        2 => 'Februari',
+        3 => 'Maret',
+        4 => 'April',
+        5 => 'Mei',
+        6 => 'Juni',
+        7 => 'Juli',
+        8 => 'Agustus',
+        9 => 'September',
+        10 => 'Oktober',
+        11 => 'November',
+        12 => 'Desember',
+    ];
+
+    /**
+     * Format Carbon date into Indonesian Month Year (e.g. "November 2026").
+     */
+    public function formatMonthYearId(Carbon $date): string
+    {
+        $m = (int) $date->format('n');
+        $monthName = self::INDONESIAN_MONTHS[$m] ?? $date->format('F');
+
+        return $monthName.' '.$date->format('Y');
+    }
+
+    /**
+     * Resolves period filter (harian, mingguan, bulanan, per_bulan, rentang_bulan, custom) into [Carbon $start, Carbon $end, string $groupBy, string $label].
      *
      * @return array{start: Carbon, end: Carbon, group: string, label: string}
      */
-    public function resolvePeriod(string $period = 'bulanan', ?string $dateFrom = null, ?string $dateTo = null): array
-    {
+    public function resolvePeriod(
+        string $period = 'bulanan',
+        ?string $dateFrom = null,
+        ?string $dateTo = null,
+        ?string $month = null,
+        ?string $monthFrom = null,
+        ?string $monthTo = null,
+        ?string $groupBy = null
+    ): array {
         $now = now()->timezone('Asia/Jakarta');
 
         if ($period === 'harian' || $period === 'today') {
@@ -48,6 +86,42 @@ class ReportService
             ];
         }
 
+        if ($period === 'per_bulan' && $month && preg_match('/^\d{4}-\d{2}$/', $month)) {
+            $parsed = Carbon::createFromFormat('Y-m-d', $month.'-01', 'Asia/Jakarta');
+            $start = $parsed->copy()->startOfMonth()->startOfDay();
+            $end = $parsed->copy()->endOfMonth()->endOfDay();
+
+            return [
+                'start' => $start,
+                'end' => $end,
+                'group' => in_array($groupBy, ['harian', 'bulanan'], true) ? $groupBy : 'harian',
+                'label' => 'Bulan '.$this->formatMonthYearId($start),
+            ];
+        }
+
+        if ($period === 'rentang_bulan' && $monthFrom && $monthTo && preg_match('/^\d{4}-\d{2}$/', $monthFrom) && preg_match('/^\d{4}-\d{2}$/', $monthTo)) {
+            $parsedFrom = Carbon::createFromFormat('Y-m-d', $monthFrom.'-01', 'Asia/Jakarta');
+            $parsedTo = Carbon::createFromFormat('Y-m-d', $monthTo.'-01', 'Asia/Jakarta');
+
+            if ($parsedTo->lt($parsedFrom)) {
+                [$parsedFrom, $parsedTo] = [$parsedTo, $parsedFrom];
+            }
+
+            $start = $parsedFrom->copy()->startOfMonth()->startOfDay();
+            $end = $parsedTo->copy()->endOfMonth()->endOfDay();
+            $sameMonth = $start->format('Y-m') === $end->format('Y-m');
+            $defaultGroup = $sameMonth ? 'harian' : 'bulanan';
+
+            return [
+                'start' => $start,
+                'end' => $end,
+                'group' => in_array($groupBy, ['harian', 'bulanan'], true) ? $groupBy : $defaultGroup,
+                'label' => $sameMonth
+                    ? 'Bulan '.$this->formatMonthYearId($start)
+                    : 'Rentang Bulan: '.$this->formatMonthYearId($start).' – '.$this->formatMonthYearId($end),
+            ];
+        }
+
         if ($period === 'custom' && $dateFrom && $dateTo) {
             $start = Carbon::parse($dateFrom, 'Asia/Jakarta')->startOfDay();
             $end = Carbon::parse($dateTo, 'Asia/Jakarta')->endOfDay();
@@ -58,7 +132,7 @@ class ReportService
             return [
                 'start' => $start,
                 'end' => $end,
-                'group' => $start->diffInDays($end) > 60 ? 'bulanan' : 'harian',
+                'group' => in_array($groupBy, ['harian', 'bulanan'], true) ? $groupBy : ($start->diffInDays($end) > 60 ? 'bulanan' : 'harian'),
                 'label' => $start->format('d M Y').' – '.$end->format('d M Y'),
             ];
         }
@@ -202,7 +276,7 @@ class ReportService
             $dt = $order->created_at->copy()->timezone('Asia/Jakarta');
             if ($groupBy === 'bulanan') {
                 $key = $dt->format('Y-m');
-                $label = $dt->translatedFormat('M Y');
+                $label = $this->formatMonthYearId($dt);
             } elseif ($groupBy === 'mingguan') {
                 $weekStart = $dt->copy()->startOfWeek();
                 $key = $weekStart->format('Y-W');

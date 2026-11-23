@@ -839,21 +839,84 @@ class ManagerController extends Controller
         $period = (string) $request->query('period', 'bulanan');
         $dateFrom = $request->query('from');
         $dateTo = $request->query('to');
+        $groupBy = $request->query('group_by');
 
-        $resolved = $this->reportService->resolvePeriod($period, $dateFrom, $dateTo);
+        $now = now()->timezone('Asia/Jakarta');
+
+        // Resolve single month filter (YYYY-MM or month_num + year)
+        $month = $request->query('month');
+        if (! $month && $request->filled(['month_num', 'year'])) {
+            $month = sprintf('%04d-%02d', (int) $request->query('year'), max(1, min(12, (int) $request->query('month_num'))));
+        }
+        if (! $month || ! preg_match('/^\d{4}-\d{2}$/', (string) $month)) {
+            $month = $now->format('Y-m');
+        }
+
+        // Resolve month range filter (YYYY-MM or month_from_num + year_from / month_to_num + year_to)
+        $monthFrom = $request->query('month_from');
+        if (! $monthFrom && $request->filled(['month_from_num', 'year_from'])) {
+            $monthFrom = sprintf('%04d-%02d', (int) $request->query('year_from'), max(1, min(12, (int) $request->query('month_from_num'))));
+        }
+        if (! $monthFrom || ! preg_match('/^\d{4}-\d{2}$/', (string) $monthFrom)) {
+            $monthFrom = $now->copy()->subMonths(2)->format('Y-m');
+        }
+
+        $monthTo = $request->query('month_to');
+        if (! $monthTo && $request->filled(['month_to_num', 'year_to'])) {
+            $monthTo = sprintf('%04d-%02d', (int) $request->query('year_to'), max(1, min(12, (int) $request->query('month_to_num'))));
+        }
+        if (! $monthTo || ! preg_match('/^\d{4}-\d{2}$/', (string) $monthTo)) {
+            $monthTo = $now->format('Y-m');
+        }
+
+        $resolved = $this->reportService->resolvePeriod(
+            $period,
+            $dateFrom,
+            $dateTo,
+            (string) $month,
+            (string) $monthFrom,
+            (string) $monthTo,
+            is_string($groupBy) ? $groupBy : null
+        );
+
         $summary = $this->reportService->getSummary($resolved['start'], $resolved['end']);
         $breakdown = $this->reportService->getPeriodBreakdown($resolved['start'], $resolved['end'], $resolved['group']);
         $topProducts = $this->reportService->getTopProducts($resolved['start'], $resolved['end'], 15);
         $categorySales = $this->reportService->getSalesByCategory($resolved['start'], $resolved['end']);
 
         if ($request->query('format') === 'csv') {
-            return $this->streamCsvReport('laporan-manager-774hub-'.$period.'.csv', $resolved['label'], $summary, $breakdown);
+            $csvSlug = match ($period) {
+                'per_bulan' => 'bulan-'.$month,
+                'rentang_bulan' => 'rentang-'.$monthFrom.'-sd-'.$monthTo,
+                default => $period,
+            };
+
+            return $this->streamCsvReport('laporan-manager-774hub-'.$csvSlug.'.csv', $resolved['label'], $summary, $breakdown);
         }
+
+        [$selectedYear, $selectedMonthNum] = array_map('intval', explode('-', (string) $month));
+        [$selectedYearFrom, $selectedMonthFromNum] = array_map('intval', explode('-', (string) $monthFrom));
+        [$selectedYearTo, $selectedMonthToNum] = array_map('intval', explode('-', (string) $monthTo));
+
+        $currentYear = (int) $now->format('Y');
+        $availableYears = range($currentYear - 3, $currentYear + 1);
 
         return view('manager.reports', [
             'period' => $period,
             'dateFrom' => $resolved['start']->toDateString(),
             'dateTo' => $resolved['end']->toDateString(),
+            'month' => $month,
+            'monthFrom' => $monthFrom,
+            'monthTo' => $monthTo,
+            'selectedMonthNum' => $selectedMonthNum,
+            'selectedYear' => $selectedYear,
+            'selectedMonthFromNum' => $selectedMonthFromNum,
+            'selectedYearFrom' => $selectedYearFrom,
+            'selectedMonthToNum' => $selectedMonthToNum,
+            'selectedYearTo' => $selectedYearTo,
+            'availableMonths' => \App\Domain\Reporting\ReportService::INDONESIAN_MONTHS,
+            'availableYears' => $availableYears,
+            'activeGroupBy' => $resolved['group'],
             'periodLabel' => $resolved['label'],
             'summary' => $summary,
             'breakdown' => $breakdown,
