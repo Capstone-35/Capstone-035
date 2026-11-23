@@ -11,6 +11,7 @@ use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -68,7 +69,9 @@ class OwnerController extends Controller
         $categorySales = $this->reportService->getSalesByCategory($resolved['start'], $resolved['end']);
 
         if ($request->query('format') === 'csv') {
-            return $this->streamCsv('laporan-penjualan-774hub-'.$period.'.csv', 'Laporan Penjualan 774 HUB', $resolved['label'], $summary, $breakdown);
+            $safePeriod = Str::slug($period) ?: 'laporan';
+
+            return $this->streamCsv('laporan-penjualan-774hub-'.$safePeriod.'.csv', 'Laporan Penjualan 774 HUB', $resolved['label'], $summary, $breakdown);
         }
 
         return view('owner.sales-report', [
@@ -97,7 +100,9 @@ class OwnerController extends Controller
         $breakdown = $this->reportService->getPeriodBreakdown($resolved['start'], $resolved['end'], $resolved['group']);
 
         if ($request->query('format') === 'csv') {
-            return $this->streamCsv('laporan-pendapatan-774hub-'.$period.'.csv', 'Laporan Pendapatan Operasional 774 HUB', $resolved['label'], $summary, $breakdown);
+            $safePeriod = Str::slug($period) ?: 'laporan';
+
+            return $this->streamCsv('laporan-pendapatan-774hub-'.$safePeriod.'.csv', 'Laporan Pendapatan Operasional 774 HUB', $resolved['label'], $summary, $breakdown);
         }
 
         return view('owner.revenue-report', [
@@ -117,7 +122,7 @@ class OwnerController extends Controller
     {
         $latestAnalysis = RfmAnalysis::query()->latest('id')->first();
         $rfmDistribution = $this->reportService->getRfmDistribution();
-        $segments = RfmSegment::query()->orderBy('priority')->get();
+        $segments = RfmSegment::query()->where('is_active', true)->orderBy('priority')->get();
 
         $topMembers = Member::query()
             ->with(['user', 'latestRfmResult.segment'])
@@ -167,7 +172,7 @@ class OwnerController extends Controller
     public function usersStore(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:100'],
+            'name' => ['required', 'string', 'max:80'],
             'email' => ['required', 'email', 'max:120', 'unique:users,email'],
             'phone' => ['nullable', 'string', 'max:30', 'unique:users,phone'],
             'role' => ['required', 'in:kasir,kitchen,manager,owner'],
@@ -177,7 +182,7 @@ class OwnerController extends Controller
         $user = User::query()->create([
             'name' => trim(strip_tags($validated['name'])),
             'email' => strtolower(trim($validated['email'])),
-            'phone' => $validated['phone'] ?: null,
+            'phone' => ($validated['phone'] ?? null) ? trim($validated['phone']) : null,
             'password' => Hash::make($validated['password']),
             'is_active' => true,
         ]);
@@ -189,19 +194,33 @@ class OwnerController extends Controller
 
     public function usersUpdate(Request $request, User $user): RedirectResponse
     {
+        if (! $user->hasAnyRole(['kasir', 'kitchen', 'manager', 'owner'])) {
+            abort(403, 'Akun pelanggan tidak dapat diubah melalui manajemen staf.');
+        }
+
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:100'],
+            'name' => ['required', 'string', 'max:80'],
             'email' => ['required', 'email', 'max:120', Rule::unique('users', 'email')->ignore($user->id)],
+            'phone' => ['nullable', 'string', 'max:30', Rule::unique('users', 'phone')->ignore($user->id)],
             'role' => ['required', 'in:kasir,kitchen,manager,owner'],
             'is_active' => ['nullable', 'boolean'],
             'password' => ['nullable', 'string', 'min:8'],
         ]);
 
+        $isSelf = $user->id === $request->user()?->id;
+        if ($isSelf && (! $request->boolean('is_active', true) || $validated['role'] !== 'owner')) {
+            return back()->with('toast_error', 'Anda tidak dapat menonaktifkan atau menurunkan peran akun Anda sendiri.');
+        }
+
         $payload = [
             'name' => trim(strip_tags($validated['name'])),
             'email' => strtolower(trim($validated['email'])),
-            'is_active' => $request->boolean('is_active', false),
+            'is_active' => $isSelf ? true : $request->boolean('is_active', false),
         ];
+
+        if ($request->has('phone')) {
+            $payload['phone'] = ($validated['phone'] ?? null) ? trim($validated['phone']) : null;
+        }
 
         if (! empty($validated['password'])) {
             $payload['password'] = Hash::make($validated['password']);
@@ -217,6 +236,8 @@ class OwnerController extends Controller
     {
         return response()->streamDownload(function () use ($title, $periodLabel, $summary, $breakdown) {
             $out = fopen('php://output', 'w');
+            fwrite($out, "\xEF\xBB\xBF");
+            fwrite($out, "sep=,\r\n");
             fputcsv($out, [$title]);
             fputcsv($out, ['Periode', $periodLabel]);
             fputcsv($out, ['Total Transaksi Dibayar/Selesai', $summary['tx_count']]);

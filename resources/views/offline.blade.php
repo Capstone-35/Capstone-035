@@ -1,7 +1,7 @@
 @extends('layouts.customer', ['title' => 'Gangguan Koneksi'])
 
 @section('content')
-<div class="bg-white rounded-2xl border border-[#E6DED2] p-6 text-center shadow-sm">
+<div class="max-w-lg mx-auto bg-white rounded-2xl border border-[#E6DED2] p-5 sm:p-7 text-center shadow-sm">
     <div class="mx-auto w-14 h-14 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center font-extrabold text-lg">
         !
     </div>

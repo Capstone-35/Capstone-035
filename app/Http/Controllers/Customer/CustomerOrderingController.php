@@ -9,6 +9,7 @@ use App\Domain\Payment\PaymentService;
 use App\Domain\Promotion\PromotionEngine;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentMethod;
+use App\Enums\PaymentStatus;
 use App\Enums\PromotionRuleType;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
@@ -71,7 +72,7 @@ class CustomerOrderingController extends Controller
         $request->session()->put('qr_token', $table->qr_token);
 
         if (! $request->session()->has('ordering_mode')) {
-            $request->session()->put('ordering_mode', auth()->check() ? 'member' : 'guest');
+            $request->session()->put('ordering_mode', (auth()->check() && auth()->user()->hasRole('member')) ? 'member' : 'guest');
         }
 
         $redirect = redirect()->route('menu.index')
@@ -132,7 +133,7 @@ class CustomerOrderingController extends Controller
         }
 
         $products = $productsQuery
-            ->withSum('orderItems as total_sold_qty', 'quantity')
+            ->withSum(['orderItems as total_sold_qty' => fn ($q) => $q->whereHas('order', fn ($oq) => $oq->paidRevenue())], 'quantity')
             ->orderByDesc('is_available')
             ->orderBy('name')
             ->get();
@@ -157,9 +158,12 @@ class CustomerOrderingController extends Controller
             }
         }
 
+        $now = now();
         $featuredPromotions = Promotion::query()
             ->where('is_active', true)
             ->where('rule_type', '!=', PromotionRuleType::ReturnTracking->value)
+            ->where(fn ($q) => $q->whereNull('starts_at')->orWhere('starts_at', '<=', $now))
+            ->where(fn ($q) => $q->whereNull('ends_at')->orWhere('ends_at', '>=', $now))
             ->orderBy('id')
             ->take(3)
             ->get();
@@ -185,13 +189,14 @@ class CustomerOrderingController extends Controller
      */
     public function productDetail(Request $request, Product $product): View
     {
-        abort_unless($product->is_active, 404);
+        $product->load('category');
+        abort_unless($product->is_active && ($product->category?->is_active ?? false), 404);
         $table = $this->resolveSessionTable($request);
         $cartSummary = $this->getCartSummary($request);
 
         return view('customer.product-detail', [
             'table' => $table,
-            'product' => $product->load('category'),
+            'product' => $product,
             'cartSummary' => $cartSummary,
         ]);
     }
@@ -222,18 +227,30 @@ class CustomerOrderingController extends Controller
             'note.max' => 'Catatan maksimal 200 karakter.',
         ]);
 
-        $product = Product::query()->findOrFail($validated['product_id']);
-        if (! $product->is_active || ! $product->is_available) {
+        $product = Product::query()->with('category')->findOrFail($validated['product_id']);
+        if (! $product->is_active || ! $product->is_available || ! ($product->category?->is_active ?? false)) {
             return back()->with('toast_error', "Maaf, {$product->name} sedang habis atau tidak tersedia.");
         }
 
         $cart = (array) $request->session()->get('customer_cart', []);
         $note = isset($validated['note']) ? trim(strip_tags((string) $validated['note'])) : '';
-        $lineKey = $product->id.'_'.md5(strtolower($note));
+        $normalizedNote = strtolower($note);
+        $matchedKey = null;
 
-        if (isset($cart[$lineKey])) {
-            $cart[$lineKey]['quantity'] = min(99, (int) $cart[$lineKey]['quantity'] + (int) $validated['quantity']);
+        foreach ($cart as $existingKey => $existingLine) {
+            if (
+                (int) ($existingLine['product_id'] ?? 0) === $product->id
+                && strtolower(trim((string) ($existingLine['note'] ?? ''))) === $normalizedNote
+            ) {
+                $matchedKey = (string) $existingKey;
+                break;
+            }
+        }
+
+        if ($matchedKey !== null) {
+            $cart[$matchedKey]['quantity'] = min(99, (int) $cart[$matchedKey]['quantity'] + (int) $validated['quantity']);
         } else {
+            $lineKey = $product->id.'_'.md5($normalizedNote);
             $cart[$lineKey] = [
                 'line_key' => $lineKey,
                 'product_id' => $product->id,
@@ -269,7 +286,22 @@ class CustomerOrderingController extends Controller
 
         $cart[$lineKey]['quantity'] = $qty;
         if ($request->has('note')) {
-            $cart[$lineKey]['note'] = trim(strip_tags((string) $validated['note'])) ?: null;
+            $newNote = trim(strip_tags((string) $validated['note']));
+            $normalizedNote = strtolower($newNote);
+            $productId = (int) $cart[$lineKey]['product_id'];
+            $cart[$lineKey]['note'] = $newNote ?: null;
+
+            // Merge any other cart line that now shares the same product and note while keeping $lineKey stable
+            foreach ($cart as $otherKey => $otherLine) {
+                if (
+                    (string) $otherKey !== $lineKey
+                    && (int) ($otherLine['product_id'] ?? 0) === $productId
+                    && strtolower(trim((string) ($otherLine['note'] ?? ''))) === $normalizedNote
+                ) {
+                    $cart[$lineKey]['quantity'] = min(99, (int) $cart[$lineKey]['quantity'] + (int) ($otherLine['quantity'] ?? 0));
+                    unset($cart[$otherKey]);
+                }
+            }
         }
 
         $request->session()->put('customer_cart', $cart);
@@ -358,13 +390,22 @@ class CustomerOrderingController extends Controller
             ]);
         }
 
+        $clientRequestId = trim((string) $request->input('client_request_id', ''));
+        if ($clientRequestId !== '') {
+            $existingOrder = Order::query()->where('client_request_id', $clientRequestId)->first();
+            if ($existingOrder) {
+                return redirect()->route('order.payment', ['public_token' => $existingOrder->public_token])
+                    ->with('toast_info', "Pesanan {$existingOrder->order_number} sudah dibuat sebelumnya.");
+            }
+        }
+
         $rawCart = (array) $request->session()->get('customer_cart', []);
         if (empty($rawCart)) {
             return redirect()->route('menu.index')->with('toast_error', 'Keranjang Anda kosong.');
         }
 
         $validated = $request->validate([
-            'customer_name' => ['required', 'string', 'min:2', 'max:60'],
+            'customer_name' => ['required', 'string', 'min:2', 'max:80'],
             'customer_email' => ['required', 'email', 'max:120'],
             'customer_phone' => ['nullable', 'string', 'max:30'],
             'promotion_id' => ['nullable', 'integer'],
@@ -416,7 +457,7 @@ class CustomerOrderingController extends Controller
     {
         $order = $this->findAuthorizedOrderOr404($request, $public_token);
 
-        if ($order->status->isPaidOrLater()) {
+        if ($order->status->isPaidOrLater() || $order->status === OrderStatus::Dibatalkan) {
             return redirect()->route('order.track', ['public_token' => $order->public_token]);
         }
 
@@ -427,7 +468,12 @@ class CustomerOrderingController extends Controller
         $latestPayment = $order->payments->first();
         $qrisSvg = null;
 
-        if ($latestPayment && $latestPayment->method === PaymentMethod::Qris && $latestPayment->qris_payload) {
+        if (
+            $latestPayment
+            && $latestPayment->method === PaymentMethod::Qris
+            && $latestPayment->status === PaymentStatus::Pending
+            && $latestPayment->qris_payload
+        ) {
             $options = new QROptions([
                 'outputBase64' => false,
                 'addQuietzone' => true,
@@ -606,17 +652,20 @@ class CustomerOrderingController extends Controller
         }
 
         $productIds = collect($rawCart)->pluck('product_id')->unique()->all();
-        $products = Product::query()->whereIn('id', $productIds)->get()->keyBy('id');
+        $products = Product::query()->with('category')->whereIn('id', $productIds)->get()->keyBy('id');
 
         $lines = [];
         $itemCount = 0;
         $subtotal = 0;
         $hasUnavailable = false;
+        $cartMutated = false;
 
         foreach ($rawCart as $key => $row) {
             $product = $products->get((int) ($row['product_id'] ?? 0));
-            if (! $product || ! $product->is_active) {
-                $hasUnavailable = true;
+            if (! $product || ! $product->is_active || ! ($product->category?->is_active ?? false)) {
+                // Auto-prune deleted/inactive products so user is never trapped on /cart
+                unset($rawCart[$key]);
+                $cartMutated = true;
                 continue;
             }
 
@@ -644,6 +693,10 @@ class CustomerOrderingController extends Controller
                 'line_total' => $lineTotal,
                 'is_available' => $available,
             ];
+        }
+
+        if ($cartMutated) {
+            $request->session()->put('customer_cart', $rawCart);
         }
 
         $taxRate = max(0.0, (float) Setting::getValue('tax_rate', 0));

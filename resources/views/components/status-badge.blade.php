@@ -14,7 +14,7 @@
     };
 @endphp
 
-<span {{ $attributes->merge(['class' => "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border {$classes}"]) }}>
-    <span class="w-1.5 h-1.5 rounded-full bg-current opacity-80"></span>
+<span {{ $attributes->merge(['class' => "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border whitespace-nowrap shrink-0 {$classes}"]) }}>
+    <span class="w-1.5 h-1.5 rounded-full bg-current opacity-80 shrink-0"></span>
     {{ $value }}
 </span>

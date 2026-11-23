@@ -26,7 +26,7 @@
             <span class="badge">DIBAYAR ({{ $snapshot['payment_method'] ?? strtoupper($order->payment_method?->value ?? 'Tunai') }})</span>
         </div>
         <div style="margin-top: 4px;">
-            <strong>Pelanggan:</strong> {{ $order->customer_name }} ({{ $order->customer_email }}) &nbsp;|&nbsp;
+            <strong>Pelanggan:</strong> {{ $order->customer_name }}@if($order->customer_email) ({{ $order->customer_email }})@endif &nbsp;|&nbsp;
             <strong>Meja:</strong> {{ $order->table?->label ?? 'Takeaway / POS' }} &nbsp;|&nbsp;
             <strong>Kode Penyerahan:</strong> {{ $order->order_code }}
         </div>
@@ -67,7 +67,7 @@
             @endif
             @if($order->tax_rate > 0)
                 <tr>
-                    <td colspan="3" class="right">Pajak ({{ number_format($order->tax_rate, 0) }}%)</td>
+                    <td colspan="3" class="right">Pajak ({{ rtrim(rtrim(number_format((float) $order->tax_rate, 2, '.', ''), '0'), '.') }}%)</td>
                     <td class="right">Rp{{ number_format($order->tax_amount, 0, ',', '.') }}</td>
                 </tr>
             @endif
@@ -79,7 +79,7 @@
     </table>
 
     <div class="footer">
-        Invoice Digital Resmi 774 HUB • Diterbitkan pada {{ $snapshot['issued_at'] ?? $invoice->issued_at?->format('d/m/Y H:i') }}
+        Invoice Digital Resmi 774 HUB • Diterbitkan pada {{ $snapshot['issued_at'] ?? ($invoice->issued_at?->timezone('Asia/Jakarta')->format('d/m/Y H:i') . ' WIB') }}
     </div>
 </body>
 </html>

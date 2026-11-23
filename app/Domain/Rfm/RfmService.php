@@ -40,21 +40,21 @@ class RfmService
 
         // Validate monotonic thresholds (Section 6 Module I)
         $r = $config['r_thresholds'] ?? [];
-        if (($r[5] ?? 0) <= 0 || ($r[5] >= $r[4]) || ($r[4] >= $r[3]) || ($r[3] >= $r[2])) {
+        if (! isset($r[5], $r[4], $r[3], $r[2]) || (int) $r[5] <= 0 || ((int) $r[5] >= (int) $r[4]) || ((int) $r[4] >= (int) $r[3]) || ((int) $r[3] >= (int) $r[2])) {
             throw ValidationException::withMessages([
                 'r_thresholds' => 'Ambang Recency harus berurutan naik (Skor 5 < Skor 4 < Skor 3 < Skor 2).',
             ]);
         }
 
         $f = $config['f_thresholds'] ?? [];
-        if (($f[5] <= $f[4]) || ($f[4] <= $f[3]) || ($f[3] <= $f[2]) || ($f[2] < 1)) {
+        if (! isset($f[5], $f[4], $f[3], $f[2]) || ((int) $f[5] <= (int) $f[4]) || ((int) $f[4] <= (int) $f[3]) || ((int) $f[3] <= (int) $f[2]) || ((int) $f[2] < 1)) {
             throw ValidationException::withMessages([
                 'f_thresholds' => 'Ambang Frequency harus berurutan turun (Skor 5 > Skor 4 > Skor 3 > Skor 2 >= 1).',
             ]);
         }
 
         $m = $config['m_thresholds'] ?? [];
-        if (($m[5] <= $m[4]) || ($m[4] <= $m[3]) || ($m[3] <= $m[2]) || ($m[2] <= 0)) {
+        if (! isset($m[5], $m[4], $m[3], $m[2]) || ((int) $m[5] <= (int) $m[4]) || ((int) $m[4] <= (int) $m[3]) || ((int) $m[3] <= (int) $m[2]) || ((int) $m[2] <= 0)) {
             throw ValidationException::withMessages([
                 'm_thresholds' => 'Ambang Monetary harus berurutan turun (Skor 5 > Skor 4 > Skor 3 > Skor 2 > 0).',
             ]);

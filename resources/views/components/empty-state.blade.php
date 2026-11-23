@@ -1,6 +1,6 @@
 @props(['title', 'description' => null, 'actionUrl' => null, 'actionLabel' => null])
 
-<div {{ $attributes->merge(['class' => 'rounded-2xl border border-dashed border-[#D6CBBC] bg-[#FAF6EF] p-8 text-center']) }}>
+<div {{ $attributes->merge(['class' => 'rounded-2xl border border-dashed border-[#D6CBBC] bg-[#FAF6EF] p-6 sm:p-8 text-center']) }}>
     <div class="mx-auto w-12 h-12 rounded-full bg-[#F2ECE1] flex items-center justify-center text-[#A9552F] font-bold text-lg">
         774
     </div>

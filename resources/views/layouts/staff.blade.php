@@ -15,18 +15,33 @@
     @endphp
 
     <div class="min-h-screen flex flex-col lg:flex-row">
-        <!-- Sidebar Navigation -->
-        <aside class="w-full lg:w-64 bg-[#3B2A20] text-[#FAF6EF] flex flex-col shrink-0 border-b lg:border-b-0 lg:border-r border-[#2A1E17]">
-            <div class="p-4 lg:p-5 flex items-center justify-between border-b border-white/10">
-                <a href="{{ $user ? $user->homeRoute() : '/' }}" class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-[#A9552F] text-white flex items-center justify-center font-extrabold text-sm">
+        <!-- Mobile / Tablet Backdrop -->
+        <div id="staff-sidebar-backdrop"
+             onclick="closeStaffSidebar()"
+             class="fixed inset-0 z-40 bg-black/55 backdrop-blur-[1px] hidden lg:hidden transition-opacity"
+             aria-hidden="true"></div>
+
+        <!-- Sidebar Navigation (Slide-over Drawer on Mobile/iPad, Sticky Rail on Desktop) -->
+        <aside id="staff-sidebar"
+               class="fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] -translate-x-full lg:translate-x-0 lg:sticky lg:top-0 lg:h-screen lg:w-64 bg-[#3B2A20] text-[#FAF6EF] flex flex-col shrink-0 border-r border-[#2A1E17] transition-transform duration-200 ease-out shadow-2xl lg:shadow-none">
+            <div class="p-4 lg:p-5 flex items-center justify-between gap-2 border-b border-white/10 shrink-0">
+                <a href="{{ $user ? $user->homeRoute() : '/' }}" class="flex items-center gap-3 min-w-0">
+                    <div class="w-10 h-10 rounded-xl bg-[#A9552F] text-white flex items-center justify-center font-extrabold text-sm shrink-0">
                         774
                     </div>
-                    <div>
-                        <div class="font-extrabold text-base leading-tight">774 HUB</div>
-                        <div class="text-xs text-[#FAF6EF]/70 uppercase tracking-wider font-semibold">{{ strtoupper($primaryRole) }} PANEL</div>
+                    <div class="min-w-0">
+                        <div class="font-extrabold text-base leading-tight truncate">774 HUB</div>
+                        <div class="text-xs text-[#FAF6EF]/70 uppercase tracking-wider font-semibold truncate">{{ strtoupper($primaryRole) }} PANEL</div>
                     </div>
                 </a>
+                <button type="button"
+                        onclick="closeStaffSidebar()"
+                        aria-label="Tutup menu navigasi"
+                        class="lg:hidden min-w-[40px] min-h-[40px] rounded-xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center shrink-0 transition">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
             </div>
 
             @php
@@ -126,7 +141,7 @@
                     @endforeach
                 </nav>
             @else
-                <nav aria-label="Menu Utama Staf" class="flex-1 px-3 py-4 flex lg:flex-col gap-1 overflow-x-auto lg:overflow-x-visible">
+                <nav aria-label="Menu Utama Staf" class="flex-1 px-3 py-4 flex flex-col gap-1 overflow-y-auto">
                     @foreach($visibleNavItems as $item)
                         <a href="{{ route($item['route']) }}"
                            class="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition {{ $item['is_active'] ? 'bg-[#A9552F] text-white shadow-sm' : 'text-[#FAF6EF]/80 hover:bg-white/10 hover:text-white' }}">
@@ -136,14 +151,14 @@
                 </nav>
             @endif
 
-            <div class="p-4 border-t border-white/10 flex items-center justify-between gap-2 text-xs">
-                <div class="truncate">
+            <div class="p-4 border-t border-white/10 flex items-center justify-between gap-2 text-xs shrink-0">
+                <div class="truncate min-w-0">
                     <div class="font-bold text-white truncate">{{ $user?->name }}</div>
                     <div class="text-[#FAF6EF]/70 truncate">{{ $user?->email }}</div>
                 </div>
-                <form method="POST" action="{{ route('logout') }}">
+                <form method="POST" action="{{ route('logout') }}" class="shrink-0">
                     @csrf
-                    <button type="submit" class="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white font-semibold transition">
+                    <button type="submit" class="min-h-[36px] px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white font-semibold transition">
                         Keluar
                     </button>
                 </form>
@@ -152,31 +167,40 @@
 
         <!-- Main Content Area -->
         <div class="flex-1 flex flex-col min-w-0">
-            <header class="bg-white border-b border-[#E6DED2] px-4 lg:px-8 py-3.5 flex flex-wrap items-center justify-between gap-3">
-                <div class="flex items-center gap-3">
-                    <h1 class="text-lg lg:text-xl font-extrabold text-[#1F1A17]">
+            <header class="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-[#E6DED2] px-3.5 sm:px-5 lg:px-8 py-3 flex flex-wrap items-center justify-between gap-2.5 sm:gap-3">
+                <div class="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
+                    <button type="button"
+                            onclick="openStaffSidebar()"
+                            aria-label="Buka menu navigasi"
+                            aria-controls="staff-sidebar"
+                            class="lg:hidden min-w-[42px] min-h-[42px] rounded-xl bg-[#3B2A20] text-[#FAF6EF] hover:bg-[#2A1E17] flex items-center justify-center shrink-0 transition shadow-xs">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
+                    <h1 class="text-base sm:text-lg lg:text-xl font-extrabold text-[#1F1A17] leading-snug truncate">
                         @yield('heading', $title ?? 'Dashboard Operasional')
                     </h1>
                 </div>
 
-                <div class="flex flex-wrap items-center gap-2 text-xs">
+                <div class="flex flex-wrap items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs shrink-0">
                     @if(config('app.demo_mode'))
-                        <span class="px-2.5 py-1 rounded-full bg-[#F2ECE1] border border-[#E6DED2] text-[#3B2A20] font-bold">
+                        <span class="hidden sm:inline-flex px-2.5 py-1 rounded-full bg-[#F2ECE1] border border-[#E6DED2] text-[#3B2A20] font-bold whitespace-nowrap">
                             Data Demonstrasi
                         </span>
                     @endif
                     @if(config('app.payment_driver') === 'mock')
-                        <span class="px-2.5 py-1 rounded-full bg-amber-100 border border-amber-300 text-amber-900 font-bold">
+                        <span class="hidden md:inline-flex px-2.5 py-1 rounded-full bg-amber-100 border border-amber-300 text-amber-900 font-bold whitespace-nowrap">
                             SIMULASI QRIS & WA
                         </span>
                     @endif
-                    <span class="px-2.5 py-1 rounded-full bg-[#3B2A20] text-[#FAF6EF] font-semibold uppercase">
+                    <span class="px-2.5 py-1 rounded-full bg-[#3B2A20] text-[#FAF6EF] font-semibold uppercase whitespace-nowrap">
                         {{ $primaryRole }}
                     </span>
                 </div>
             </header>
 
-            <main class="flex-1 p-4 lg:p-8 max-w-7xl w-full mx-auto">
+            <main class="flex-1 p-3.5 sm:p-5 lg:p-8 max-w-7xl w-full mx-auto min-w-0">
                 @if(session('toast_success'))
                     <div role="status" class="mb-5 rounded-xl bg-[#DCFCE7] border border-[#86EFAC] text-[#166534] px-4 py-3 text-sm font-semibold">
                         {{ session('toast_success') }}
@@ -212,6 +236,30 @@
     </div>
 
     <script>
+        function openStaffSidebar() {
+            const sidebar = document.getElementById('staff-sidebar');
+            const backdrop = document.getElementById('staff-sidebar-backdrop');
+            if (!sidebar) return;
+            sidebar.classList.remove('-translate-x-full');
+            backdrop?.classList.remove('hidden');
+            document.body.classList.add('overflow-hidden', 'lg:overflow-auto');
+        }
+
+        function closeStaffSidebar() {
+            const sidebar = document.getElementById('staff-sidebar');
+            const backdrop = document.getElementById('staff-sidebar-backdrop');
+            if (!sidebar) return;
+            sidebar.classList.add('-translate-x-full');
+            backdrop?.classList.add('hidden');
+            document.body.classList.remove('overflow-hidden', 'lg:overflow-auto');
+        }
+
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
+                closeStaffSidebar();
+            }
+        });
+
         function toggleNavGroup(slug) {
             const itemsEl = document.getElementById('nav-group-items-' + slug);
             const iconEl = document.getElementById('nav-group-icon-' + slug);

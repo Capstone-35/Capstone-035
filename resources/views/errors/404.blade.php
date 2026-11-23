@@ -6,8 +6,8 @@
     <title>404 Tidak Ditemukan — 774 HUB</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="min-h-full bg-[#FAF6EF] text-[#1F1A17] flex items-center justify-center p-6">
-    <div class="max-w-md w-full bg-white rounded-2xl border border-[#E6DED2] p-8 text-center shadow-sm">
+<body class="min-h-full bg-[#FAF6EF] text-[#1F1A17] flex items-center justify-center p-4 sm:p-6">
+    <div class="max-w-md w-full bg-white rounded-2xl border border-[#E6DED2] p-6 sm:p-8 text-center shadow-sm">
         <div class="mx-auto w-14 h-14 rounded-2xl bg-[#F2ECE1] text-[#3B2A20] flex items-center justify-center font-extrabold text-xl">
             404
         </div>

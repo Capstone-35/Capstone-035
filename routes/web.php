@@ -35,7 +35,9 @@ Route::post('/checkout', [CustomerOrderingController::class, 'placeOrder'])
 
 Route::get('/order/{public_token}/payment', [CustomerOrderingController::class, 'paymentPage'])->name('order.payment');
 Route::post('/order/{public_token}/payment', [CustomerOrderingController::class, 'selectPaymentMethod'])->name('order.payment.select');
-Route::post('/order/{public_token}/payment/simulate-qris', [PaymentWebhookController::class, 'simulateCustomerQris'])->name('order.payment.simulate_qris');
+Route::post('/order/{public_token}/payment/simulate-qris', [PaymentWebhookController::class, 'simulateCustomerQris'])
+    ->middleware('throttle:checkout')
+    ->name('order.payment.simulate_qris');
 
 Route::get('/order/{public_token}', [CustomerOrderingController::class, 'trackOrder'])->name('order.track');
 Route::get('/order/{public_token}/status', [CustomerOrderingController::class, 'orderStatusJson'])->name('order.status.json');
@@ -179,7 +181,9 @@ Route::prefix('manager')
         Route::get('/promotions/create', [ManagerController::class, 'promotionsCreate'])->name('promotions.create');
         Route::post('/promotions', [ManagerController::class, 'promotionsStore'])->name('promotions.store');
         Route::get('/promotions/performance', [ManagerController::class, 'promotionsPerformance'])->name('promotions.performance');
-        Route::get('/promotions/{promotion}', [ManagerController::class, 'promotionsShow'])->name('promotions.show');
+        Route::get('/promotions/{promotion}', [ManagerController::class, 'promotionsShow'])
+            ->withTrashed()
+            ->name('promotions.show');
         Route::get('/promotions/{promotion}/edit', [ManagerController::class, 'promotionsEdit'])->name('promotions.edit');
         Route::match(['put', 'patch'], '/promotions/{promotion}', [ManagerController::class, 'promotionsUpdate'])->name('promotions.update');
         Route::post('/promotions/{promotion}/toggle', [ManagerController::class, 'promotionsToggle'])->name('promotions.toggle');

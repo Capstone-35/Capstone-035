@@ -134,7 +134,7 @@ class KdsController extends Controller
             ->orderBy('id')
             ->get()
             ->map(function (Order $o) {
-                $elapsedMinutes = $o->paid_at ? (int) $o->paid_at->diffInMinutes(now()) : 0;
+                $elapsedMinutes = $o->paid_at ? max(0, (int) $o->paid_at->diffInMinutes(now())) : 0;
 
                 return [
                     'order_number' => $o->order_number,
@@ -144,7 +144,9 @@ class KdsController extends Controller
                     'table_label' => $o->table?->label ?? 'Takeaway/POS',
                     'customer_name' => $o->customer_name,
                     'status' => $o->status->value,
-                    'paid_at' => $o->paid_at?->format('H:i:s'),
+                    'paid_at' => $o->paid_at?->timezone('Asia/Jakarta')->format('H:i:s'),
+                    'processing_at' => $o->processing_at?->timezone('Asia/Jakarta')->format('H:i:s'),
+                    'ready_at' => $o->ready_at?->timezone('Asia/Jakarta')->format('H:i:s'),
                     'elapsed_minutes' => $elapsedMinutes,
                     'items' => $o->items->map(fn ($i) => [
                         'product_name' => $i->product_name,

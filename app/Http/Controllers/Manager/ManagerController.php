@@ -21,6 +21,7 @@ use App\Models\RfmResult;
 use App\Models\RfmSegment;
 use App\Models\Setting;
 use App\Models\User;
+use Carbon\Carbon;
 use chillerlan\QRCode\QRCode;
 use chillerlan\QRCode\QROptions;
 use Illuminate\Http\RedirectResponse;
@@ -171,7 +172,7 @@ class ManagerController extends Controller
             $this->orderService->cancel(
                 $order,
                 Auth::user(),
-                $validated['reason'] ?: 'Dibatalkan oleh Manager',
+                ($validated['reason'] ?? null) ?: 'Dibatalkan oleh Manager',
                 'manager'
             );
 
@@ -469,7 +470,7 @@ class ManagerController extends Controller
 
     public function promotionsUpdate(Request $request, Promotion $promotion): RedirectResponse
     {
-        $validated = $this->validatePromotionPayload($request, $promotion->id);
+        $validated = $this->validatePromotionPayload($request, $promotion);
 
         $promotion->update([
             ...$validated,
@@ -587,6 +588,10 @@ class ManagerController extends Controller
             'valid_days' => ['required', 'integer', 'min:1', 'max:365'],
             'is_active' => ['nullable', 'boolean'],
         ]);
+
+        if ($validated['benefit_type'] === 'percent' && $validated['benefit_value'] > 100) {
+            return back()->withInput()->withErrors(['benefit_value' => 'Diskon persentase tidak boleh lebih dari 100%.']);
+        }
 
         $reward->update([
             'name' => trim(strip_tags($validated['name'])),
@@ -794,8 +799,10 @@ class ManagerController extends Controller
     public function tablesStore(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'number' => ['required', 'string', 'max:10', 'unique:tables,number'],
+            'number' => ['required', 'string', 'max:10', 'regex:/^[A-Za-z0-9\-]+$/', 'unique:tables,number'],
             'label' => ['required', 'string', 'max:50'],
+        ], [
+            'number.regex' => 'Nomor meja hanya boleh berisi huruf, angka, dan tanda hubung (-).',
         ]);
 
         DiningTable::query()->create([
@@ -948,7 +955,7 @@ class ManagerController extends Controller
     public function usersStore(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:100'],
+            'name' => ['required', 'string', 'max:80'],
             'email' => ['required', 'email', 'max:120', 'unique:users,email'],
             'phone' => ['nullable', 'string', 'max:30', 'unique:users,phone'],
             'role' => ['required', 'in:kasir,kitchen,manager'],
@@ -958,7 +965,7 @@ class ManagerController extends Controller
         $user = User::query()->create([
             'name' => trim(strip_tags($validated['name'])),
             'email' => strtolower(trim($validated['email'])),
-            'phone' => $validated['phone'] ?: null,
+            'phone' => ($validated['phone'] ?? null) ? trim($validated['phone']) : null,
             'password' => Hash::make($validated['password']),
             'is_active' => true,
         ]);
@@ -970,23 +977,33 @@ class ManagerController extends Controller
 
     public function usersUpdate(Request $request, User $user): RedirectResponse
     {
-        if ($user->hasRole('owner')) {
-            abort(403, 'Manager tidak memiliki wewenang untuk mengubah akun Owner.');
+        if ($user->hasRole('owner') || ! $user->hasAnyRole(['kasir', 'kitchen', 'manager'])) {
+            abort(403, 'Manager hanya dapat mengubah akun staf operasional (Kasir, Kitchen, Manager).');
         }
 
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:100'],
+            'name' => ['required', 'string', 'max:80'],
             'email' => ['required', 'email', 'max:120', Rule::unique('users', 'email')->ignore($user->id)],
+            'phone' => ['nullable', 'string', 'max:30', Rule::unique('users', 'phone')->ignore($user->id)],
             'role' => ['required', 'in:kasir,kitchen,manager'],
             'is_active' => ['nullable', 'boolean'],
             'password' => ['nullable', 'string', 'min:8'],
         ]);
 
+        $isSelf = $user->id === Auth::id();
+        if ($isSelf && (! $request->boolean('is_active', true) || $validated['role'] !== 'manager')) {
+            return back()->with('toast_error', 'Anda tidak dapat menonaktifkan atau menurunkan peran akun Anda sendiri.');
+        }
+
         $payload = [
             'name' => trim(strip_tags($validated['name'])),
             'email' => strtolower(trim($validated['email'])),
-            'is_active' => $request->boolean('is_active', false),
+            'is_active' => $isSelf ? true : $request->boolean('is_active', false),
         ];
+
+        if ($request->has('phone')) {
+            $payload['phone'] = ($validated['phone'] ?? null) ? trim($validated['phone']) : null;
+        }
 
         if (! empty($validated['password'])) {
             $payload['password'] = Hash::make($validated['password']);
@@ -998,8 +1015,9 @@ class ManagerController extends Controller
         return back()->with('toast_success', "Akun staf {$user->name} berhasil diperbarui.");
     }
 
-    protected function validatePromotionPayload(Request $request, ?int $ignoreId = null): array
+    protected function validatePromotionPayload(Request $request, ?Promotion $existing = null): array
     {
+        $ignoreId = $existing?->id;
         $validated = $request->validate([
             'code' => ['required', 'string', 'max:40', Rule::unique('promotions', 'code')->ignore($ignoreId)],
             'name' => ['required', 'string', 'max:100'],
@@ -1026,6 +1044,21 @@ class ManagerController extends Controller
             ]);
         }
 
+        $startsAt = Carbon::parse($validated['starts_at'], 'Asia/Jakarta')->startOfDay();
+        $endsAt = Carbon::parse($validated['ends_at'], 'Asia/Jakarta')->endOfDay();
+
+        $targetSegments = $request->has('target_segments')
+            ? (! empty($validated['target_segments']) ? array_values($validated['target_segments']) : ['all'])
+            : ($existing?->target_segments ?? ['all']);
+
+        $usageLimit = $request->has('usage_limit')
+            ? (! empty($validated['usage_limit']) ? (int) $validated['usage_limit'] : null)
+            : $existing?->usage_limit;
+
+        $conditions = $request->has('conditions')
+            ? ($validated['conditions'] ?? [])
+            : ($existing?->conditions ?? []);
+
         return [
             'code' => strtoupper(trim($validated['code'])),
             'name' => trim(strip_tags($validated['name'])),
@@ -1034,13 +1067,13 @@ class ManagerController extends Controller
             'benefit_type' => $validated['benefit_type'],
             'benefit_value' => (int) $validated['benefit_value'],
             'max_discount' => ! empty($validated['max_discount']) ? (int) $validated['max_discount'] : null,
-            'starts_at' => $validated['starts_at'],
-            'ends_at' => $validated['ends_at'],
-            'target_segments' => ! empty($validated['target_segments']) ? array_values($validated['target_segments']) : ['all'],
+            'starts_at' => $startsAt,
+            'ends_at' => $endsAt,
+            'target_segments' => $targetSegments,
             'min_transaction' => (int) $validated['min_transaction'],
-            'usage_limit' => ! empty($validated['usage_limit']) ? (int) $validated['usage_limit'] : null,
+            'usage_limit' => $usageLimit,
             'per_member_limit' => (int) $validated['per_member_limit'],
-            'conditions' => $validated['conditions'] ?? [],
+            'conditions' => $conditions,
             'is_active' => $request->boolean('is_active', false),
         ];
     }
@@ -1053,11 +1086,12 @@ class ManagerController extends Controller
             // Instruksi sep=, di baris pertama agar Microsoft Excel Windows otomatis memisahkan kolom.
             fwrite($out, "sep=,\r\n");
 
+            $safePeriodLabel = str_replace(['–', '—'], '-', $periodLabel);
             $exportedAt = now()->timezone('Asia/Jakarta')->format('d M Y H:i').' WIB';
             $csvText = fn (string $val): string => '="'.str_replace('"', '""', $val).'"';
 
             fputcsv($out, ['774 HUB - LAPORAN PENJUALAN & PENDAPATAN OPERASIONAL']);
-            fputcsv($out, ['Periode Laporan', '', $csvText($periodLabel)]);
+            fputcsv($out, ['Periode Laporan', '', $csvText($safePeriodLabel)]);
             fputcsv($out, ['Waktu Ekspor', '', $csvText($exportedAt)]);
             fputcsv($out, []);
 

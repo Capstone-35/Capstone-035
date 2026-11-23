@@ -100,7 +100,7 @@
                         </select>
                     </div>
 
-                    <div class="flex items-center gap-1.5">
+                    <div class="flex flex-wrap items-center gap-1.5">
                         <button type="submit"
                                 class="px-3 py-2 rounded-xl bg-[#3B2A20] text-[#FAF6EF] font-bold hover:bg-[#2A1E17] transition cursor-pointer">
                             Tampilkan
@@ -137,17 +137,17 @@
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mb-2.5">
-                    <div>
+                    <div class="min-w-0">
                         <label class="block text-[11px] font-bold text-[#6F6259] mb-1">Dari Bulan</label>
                         <div class="flex gap-1.5">
                             <select name="month_from_num" aria-label="Dari Bulan"
-                                    class="flex-1 px-2.5 py-2 rounded-xl bg-white border border-[#D6CBBC] text-[#1F1A17] font-semibold focus:outline-none focus:border-[#A9552F]">
+                                    class="flex-1 min-w-0 px-2.5 py-2 rounded-xl bg-white border border-[#D6CBBC] text-[#1F1A17] font-semibold focus:outline-none focus:border-[#A9552F]">
                                 @foreach($availableMonths as $mNum => $mName)
                                     <option value="{{ $mNum }}" @selected((int) $selectedMonthFromNum === (int) $mNum)>{{ $mName }}</option>
                                 @endforeach
                             </select>
                             <select name="year_from" aria-label="Dari Tahun"
-                                    class="w-20 px-2 py-2 rounded-xl bg-white border border-[#D6CBBC] text-[#1F1A17] font-semibold focus:outline-none focus:border-[#A9552F]">
+                                    class="w-20 shrink-0 px-2 py-2 rounded-xl bg-white border border-[#D6CBBC] text-[#1F1A17] font-semibold focus:outline-none focus:border-[#A9552F]">
                                 @foreach($availableYears as $yr)
                                     <option value="{{ $yr }}" @selected((int) $selectedYearFrom === (int) $yr)>{{ $yr }}</option>
                                 @endforeach
@@ -155,17 +155,17 @@
                         </div>
                     </div>
 
-                    <div>
+                    <div class="min-w-0">
                         <label class="block text-[11px] font-bold text-[#6F6259] mb-1">Sampai Bulan</label>
                         <div class="flex gap-1.5">
                             <select name="month_to_num" aria-label="Sampai Bulan"
-                                    class="flex-1 px-2.5 py-2 rounded-xl bg-white border border-[#D6CBBC] text-[#1F1A17] font-semibold focus:outline-none focus:border-[#A9552F]">
+                                    class="flex-1 min-w-0 px-2.5 py-2 rounded-xl bg-white border border-[#D6CBBC] text-[#1F1A17] font-semibold focus:outline-none focus:border-[#A9552F]">
                                 @foreach($availableMonths as $mNum => $mName)
                                     <option value="{{ $mNum }}" @selected((int) $selectedMonthToNum === (int) $mNum)>{{ $mName }}</option>
                                 @endforeach
                             </select>
                             <select name="year_to" aria-label="Sampai Tahun"
-                                    class="w-20 px-2 py-2 rounded-xl bg-white border border-[#D6CBBC] text-[#1F1A17] font-semibold focus:outline-none focus:border-[#A9552F]">
+                                    class="w-20 shrink-0 px-2 py-2 rounded-xl bg-white border border-[#D6CBBC] text-[#1F1A17] font-semibold focus:outline-none focus:border-[#A9552F]">
                                 @foreach($availableYears as $yr)
                                     <option value="{{ $yr }}" @selected((int) $selectedYearTo === (int) $yr)>{{ $yr }}</option>
                                 @endforeach
@@ -174,17 +174,18 @@
                     </div>
                 </div>
 
+                @php($rangeGroupBy = $period === 'rentang_bulan' ? ($activeGroupBy ?? 'bulanan') : 'bulanan')
                 <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
-                    <div class="flex items-center gap-2">
+                    <div class="flex flex-wrap items-center gap-2">
                         <label for="range_group_by" class="text-[11px] font-bold text-[#6F6259]">Rincian Tabel:</label>
                         <select id="range_group_by" name="group_by"
                                 class="px-2.5 py-1.5 rounded-lg bg-white border border-[#D6CBBC] text-[#1F1A17] font-semibold focus:outline-none focus:border-[#A9552F]">
-                            <option value="bulanan" @selected(($activeGroupBy ?? 'bulanan') === 'bulanan')>Rekap Per Bulan</option>
-                            <option value="harian" @selected(($activeGroupBy ?? 'bulanan') === 'harian')>Rincian Per Tanggal</option>
+                            <option value="bulanan" @selected($rangeGroupBy === 'bulanan')>Rekap Per Bulan</option>
+                            <option value="harian" @selected($rangeGroupBy === 'harian')>Rincian Per Tanggal</option>
                         </select>
                     </div>
 
-                    <div class="flex items-center gap-1.5">
+                    <div class="flex flex-wrap items-center gap-1.5">
                         <button type="submit"
                                 class="px-3 py-2 rounded-xl bg-[#3B2A20] text-[#FAF6EF] font-bold hover:bg-[#2A1E17] transition cursor-pointer">
                             Tampilkan Rentang
@@ -209,7 +210,7 @@
     </div>
 
     <!-- Summary KPI Cards -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <x-kpi-card
             label="Total Pendapatan Bersih"
             :value="'Rp' . number_format($summary['total_revenue'], 0, ',', '.')"
@@ -242,30 +243,30 @@
             <span class="text-xs font-semibold text-[#6F6259]">{{ $periodLabel }}</span>
         </div>
         <div class="overflow-x-auto">
-            <table class="w-full text-left text-xs">
+            <table class="w-full min-w-[820px] text-left text-xs">
                 <thead class="bg-[#F2ECE1] border-b border-[#E6DED2] text-[#3B2A20] font-extrabold uppercase">
                     <tr>
-                        <th class="px-4 py-3">Periode</th>
-                        <th class="px-4 py-3 text-center">Jumlah Transaksi</th>
-                        <th class="px-4 py-3 text-center">Item Terjual</th>
-                        <th class="px-4 py-3 text-right">Penjualan Kotor</th>
-                        <th class="px-4 py-3 text-right">Diskon</th>
-                        <th class="px-4 py-3 text-right">Pajak</th>
-                        <th class="px-4 py-3 text-right">Total Pendapatan</th>
-                        <th class="px-4 py-3 text-right">Tunai / QRIS</th>
+                        <th class="px-4 py-3 whitespace-nowrap">Periode</th>
+                        <th class="px-4 py-3 text-center whitespace-nowrap">Jumlah Transaksi</th>
+                        <th class="px-4 py-3 text-center whitespace-nowrap">Item Terjual</th>
+                        <th class="px-4 py-3 text-right whitespace-nowrap">Penjualan Kotor</th>
+                        <th class="px-4 py-3 text-right whitespace-nowrap">Diskon</th>
+                        <th class="px-4 py-3 text-right whitespace-nowrap">Pajak</th>
+                        <th class="px-4 py-3 text-right whitespace-nowrap">Total Pendapatan</th>
+                        <th class="px-4 py-3 text-right whitespace-nowrap">Tunai / QRIS</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-[#F2ECE1]">
                     @forelse($breakdown as $row)
                         <tr class="hover:bg-[#FAF6EF]/60">
-                            <td class="px-4 py-3.5 font-bold text-[#1F1A17]">{{ $row['period_label'] }}</td>
-                            <td class="px-4 py-3.5 text-center font-bold tabular-nums">{{ $row['tx_count'] }}</td>
-                            <td class="px-4 py-3.5 text-center tabular-nums">{{ $row['items_sold'] }}</td>
-                            <td class="px-4 py-3.5 text-right font-mono tabular-nums">Rp{{ number_format($row['gross_sales'], 0, ',', '.') }}</td>
-                            <td class="px-4 py-3.5 text-right font-mono text-[#1F7A4C] tabular-nums">Rp{{ number_format($row['discount_amount'], 0, ',', '.') }}</td>
-                            <td class="px-4 py-3.5 text-right font-mono tabular-nums">Rp{{ number_format($row['tax_amount'], 0, ',', '.') }}</td>
-                            <td class="px-4 py-3.5 text-right font-extrabold text-[#3B2A20] tabular-nums">Rp{{ number_format($row['total_revenue'], 0, ',', '.') }}</td>
-                            <td class="px-4 py-3.5 text-right text-[#6F6259] tabular-nums">
+                            <td class="px-4 py-3.5 font-bold text-[#1F1A17] whitespace-nowrap">{{ $row['period_label'] }}</td>
+                            <td class="px-4 py-3.5 text-center font-bold tabular-nums whitespace-nowrap">{{ $row['tx_count'] }}</td>
+                            <td class="px-4 py-3.5 text-center tabular-nums whitespace-nowrap">{{ $row['items_sold'] }}</td>
+                            <td class="px-4 py-3.5 text-right font-mono tabular-nums whitespace-nowrap">Rp{{ number_format($row['gross_sales'], 0, ',', '.') }}</td>
+                            <td class="px-4 py-3.5 text-right font-mono text-[#1F7A4C] tabular-nums whitespace-nowrap">Rp{{ number_format($row['discount_amount'], 0, ',', '.') }}</td>
+                            <td class="px-4 py-3.5 text-right font-mono tabular-nums whitespace-nowrap">Rp{{ number_format($row['tax_amount'], 0, ',', '.') }}</td>
+                            <td class="px-4 py-3.5 text-right font-extrabold text-[#3B2A20] tabular-nums whitespace-nowrap">Rp{{ number_format($row['total_revenue'], 0, ',', '.') }}</td>
+                            <td class="px-4 py-3.5 text-right text-[#6F6259] tabular-nums whitespace-nowrap">
                                 Rp{{ number_format($row['tunai_revenue'], 0, ',', '.') }} / Rp{{ number_format($row['qris_revenue'], 0, ',', '.') }}
                             </td>
                         </tr>

@@ -19,6 +19,24 @@
             </div>
         </div>
 
+        @if(session('toast_success'))
+            <div class="mb-4 rounded-xl bg-[#DCFCE7] border border-[#86EFAC] text-[#166534] px-4 py-3 text-xs font-semibold">
+                {{ session('toast_success') }}
+            </div>
+        @endif
+
+        @if(session('toast_warning'))
+            <div class="mb-4 rounded-xl bg-[#FEF3C7] border border-[#FCD34D] text-[#92400E] px-4 py-3 text-xs font-semibold">
+                {{ session('toast_warning') }}
+            </div>
+        @endif
+
+        @if(session('toast_error'))
+            <div class="mb-4 rounded-xl bg-[#FEE2E2] border border-[#FCA5A5] text-[#991B1B] px-4 py-3 text-xs font-semibold">
+                {{ session('toast_error') }}
+            </div>
+        @endif
+
         @if(session('toast_info'))
             <div class="mb-4 rounded-xl bg-[#DBEAFE] border border-[#93C5FD] text-[#1E40AF] px-4 py-3 text-xs font-semibold">
                 {{ session('toast_info') }}
@@ -27,17 +45,19 @@
 
         @if($errors->any())
             <div class="mb-4 rounded-xl bg-[#FEE2E2] border border-[#FCA5A5] text-[#991B1B] px-4 py-3 text-xs font-semibold">
-                {{ $errors->first() }}
+                @foreach($errors->all() as $err)
+                    <div>{{ $err }}</div>
+                @endforeach
             </div>
         @endif
 
-        <form method="POST" action="{{ route('staff.login.store') }}" class="space-y-4">
+        <form method="POST" action="{{ route('staff.login.store') }}" onsubmit="this.querySelector('button[type=submit]').disabled=true;" class="space-y-4">
             @csrf
             <div>
                 <label for="email" class="block text-xs font-bold uppercase tracking-wider text-[#3B2A20] mb-1.5">
                     Email Staf
                 </label>
-                <input id="email" name="email" type="email" value="{{ old('email') }}" required autofocus
+                <input id="email" name="email" type="email" value="{{ old('email') }}" required autofocus autocomplete="username"
                        placeholder="kasir@774hub.test"
                        class="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[#D6CBBC] bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#A9552F]">
             </div>
@@ -46,7 +66,7 @@
                 <label for="password" class="block text-xs font-bold uppercase tracking-wider text-[#3B2A20] mb-1.5">
                     Kata Sandi
                 </label>
-                <input id="password" name="password" type="password" required
+                <input id="password" name="password" type="password" required autocomplete="current-password"
                        placeholder="Masukkan kata sandi"
                        class="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[#D6CBBC] bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#A9552F]">
             </div>
@@ -59,22 +79,22 @@
         @if(config('app.demo_mode'))
             <div class="mt-6 pt-5 border-t border-[#E6DED2]">
                 <div class="text-xs font-bold text-[#3B2A20] mb-2">Kredensial Demo Cepat (Klik untuk isi otomatis):</div>
-                <div class="grid grid-cols-2 gap-2 text-xs">
-                    <button type="button" onclick="fillStaff('kasir@774hub.test')" class="px-3 py-2 rounded-xl bg-white border border-[#D6CBBC] hover:border-[#A9552F] text-left">
-                        <div class="font-bold text-[#3B2A20]">Kasir (POS)</div>
-                        <div class="text-[11px] text-[#6F6259]">kasir@774hub.test</div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                    <button type="button" onclick="fillStaff('kasir@774hub.test')" class="min-h-[44px] px-3 py-2 rounded-xl bg-white border border-[#D6CBBC] hover:border-[#A9552F] text-left min-w-0">
+                        <div class="font-bold text-[#3B2A20] truncate">Kasir (POS)</div>
+                        <div class="text-[11px] text-[#6F6259] truncate">kasir@774hub.test</div>
                     </button>
-                    <button type="button" onclick="fillStaff('kitchen@774hub.test')" class="px-3 py-2 rounded-xl bg-white border border-[#D6CBBC] hover:border-[#A9552F] text-left">
-                        <div class="font-bold text-[#3B2A20]">Kitchen (KDS)</div>
-                        <div class="text-[11px] text-[#6F6259]">kitchen@774hub.test</div>
+                    <button type="button" onclick="fillStaff('kitchen@774hub.test')" class="min-h-[44px] px-3 py-2 rounded-xl bg-white border border-[#D6CBBC] hover:border-[#A9552F] text-left min-w-0">
+                        <div class="font-bold text-[#3B2A20] truncate">Kitchen (KDS)</div>
+                        <div class="text-[11px] text-[#6F6259] truncate">kitchen@774hub.test</div>
                     </button>
-                    <button type="button" onclick="fillStaff('manager@774hub.test')" class="px-3 py-2 rounded-xl bg-white border border-[#D6CBBC] hover:border-[#A9552F] text-left">
-                        <div class="font-bold text-[#3B2A20]">Manager</div>
-                        <div class="text-[11px] text-[#6F6259]">manager@774hub.test</div>
+                    <button type="button" onclick="fillStaff('manager@774hub.test')" class="min-h-[44px] px-3 py-2 rounded-xl bg-white border border-[#D6CBBC] hover:border-[#A9552F] text-left min-w-0">
+                        <div class="font-bold text-[#3B2A20] truncate">Manager</div>
+                        <div class="text-[11px] text-[#6F6259] truncate">manager@774hub.test</div>
                     </button>
-                    <button type="button" onclick="fillStaff('owner@774hub.test')" class="px-3 py-2 rounded-xl bg-white border border-[#D6CBBC] hover:border-[#A9552F] text-left">
-                        <div class="font-bold text-[#3B2A20]">Owner</div>
-                        <div class="text-[11px] text-[#6F6259]">owner@774hub.test</div>
+                    <button type="button" onclick="fillStaff('owner@774hub.test')" class="min-h-[44px] px-3 py-2 rounded-xl bg-white border border-[#D6CBBC] hover:border-[#A9552F] text-left min-w-0">
+                        <div class="font-bold text-[#3B2A20] truncate">Owner</div>
+                        <div class="text-[11px] text-[#6F6259] truncate">owner@774hub.test</div>
                     </button>
                 </div>
             </div>
@@ -86,8 +106,8 @@
             </script>
         @endif
 
-        <div class="mt-5 text-center">
-            <a href="{{ route('menu.index') }}" class="text-xs text-[#6F6259] hover:text-[#3B2A20] underline">
+        <div class="mt-4 text-center">
+            <a href="{{ route('menu.index') }}" class="min-h-[40px] inline-flex items-center justify-center text-xs text-[#6F6259] hover:text-[#3B2A20] underline">
                 ← Kembali ke Halaman Pemesanan Pelanggan
             </a>
         </div>

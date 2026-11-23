@@ -1,20 +1,23 @@
 @extends('layouts.customer', ['title' => 'Loyalti & Voucher Hadiah'])
 
 @section('content')
-<div class="space-y-4">
+@php
+    $activeList = $redemptions->filter->isUsable();
+@endphp
+<div class="max-w-5xl mx-auto space-y-5">
     <!-- Breadcrumb / Header Navigation -->
     <div class="flex flex-wrap items-center justify-between gap-2">
-        <a href="{{ route('member.dashboard') }}" class="text-xs font-bold text-[#6F6259] hover:text-[#3B2A20] inline-flex items-center gap-1">
+        <a href="{{ route('member.dashboard') }}" class="min-h-[40px] text-xs font-bold text-[#6F6259] hover:text-[#3B2A20] inline-flex items-center gap-1">
             <span>←</span> Kembali ke Portal Member
         </a>
-        <div class="flex items-center gap-2">
-            <a href="{{ route('member.profile') }}" class="text-xs font-bold text-[#A9552F] hover:underline">
+        <div class="flex flex-wrap items-center gap-2">
+            <a href="{{ route('member.profile') }}" class="min-h-[40px] inline-flex items-center text-xs font-bold text-[#A9552F] hover:underline">
                 Profil & Keamanan Akun
             </a>
             <span class="text-gray-300">•</span>
-            <form method="POST" action="{{ route('logout') }}" class="inline">
+            <form method="POST" action="{{ route('logout') }}" onsubmit="return confirm('Keluar dari akun Member?');" class="inline">
                 @csrf
-                <button type="submit" class="text-xs font-bold text-red-600 hover:underline">
+                <button type="submit" class="min-h-[40px] text-xs font-bold text-red-600 hover:underline">
                     Keluar
                 </button>
             </form>
@@ -22,16 +25,16 @@
     </div>
 
     <!-- Points Balance Card -->
-    <div class="bg-[#3B2A20] text-[#FAF6EF] rounded-2xl p-6 shadow-sm">
+    <div class="bg-[#3B2A20] text-[#FAF6EF] rounded-2xl p-5 sm:p-6 shadow-sm">
         <div class="flex flex-wrap items-center justify-between gap-3">
             <div>
                 <span class="text-xs uppercase tracking-wider font-bold text-[#FAF6EF]/75">Saldo Poin Member</span>
-                <div class="text-3xl font-extrabold mt-1 tabular-nums">
-                    {{ number_format($member->points_balance, 0, ',', '.') }} <span class="text-lg font-bold">Poin</span>
+                <div class="text-2xl sm:text-3xl font-extrabold mt-1 tabular-nums">
+                    {{ number_format($member->points_balance, 0, ',', '.') }} <span class="text-base sm:text-lg font-bold">Poin</span>
                 </div>
                 <div class="text-xs text-[#FAF6EF]/70 mt-0.5">Kode Member: <strong class="text-white font-mono">{{ $member->member_code }}</strong></div>
             </div>
-            <a href="{{ route('menu.index') }}" class="px-4 py-2.5 rounded-xl bg-[#A9552F] text-white text-xs font-bold hover:bg-[#8E4423] shadow-sm">
+            <a href="{{ route('menu.index') }}" class="min-h-[44px] inline-flex items-center px-4 py-2.5 rounded-xl bg-[#A9552F] text-white text-xs font-bold hover:bg-[#8E4423] shadow-sm transition">
                 + Kumpulkan Poin (Pesan Menu)
             </a>
         </div>
@@ -41,33 +44,30 @@
     </div>
 
     <!-- Active Vouchers -->
-    <div class="bg-white rounded-2xl border border-[#E6DED2] p-5 shadow-sm space-y-3">
-        <div class="flex items-center justify-between">
+    <div class="bg-white rounded-2xl border border-[#E6DED2] p-4 sm:p-5 shadow-sm space-y-3">
+        <div class="flex flex-wrap items-center justify-between gap-2">
             <h2 class="text-base font-extrabold text-[#1F1A17]">Voucher Reward Saya</h2>
-            <span class="px-2.5 py-0.5 rounded-full bg-[#FAF6EF] text-[#3B2A20] border border-[#E6DED2] text-xs font-bold">
-                {{ $redemptions->filter->isUsable()->count() }} Aktif
+            <span class="px-2.5 py-0.5 rounded-full bg-[#FAF6EF] text-[#3B2A20] border border-[#E6DED2] text-xs font-bold whitespace-nowrap shrink-0">
+                {{ $activeList->count() }} Aktif
             </span>
         </div>
-        @php
-            $activeList = $redemptions->filter->isUsable();
-        @endphp
 
         @if($activeList->isEmpty())
             <p class="text-xs text-[#6F6259]">Anda belum memiliki voucher reward aktif. Tukar poin Anda pada katalog di bawah untuk mendapatkan potongan harga!</p>
         @else
-            <div class="space-y-2.5">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                 @foreach($activeList as $redemption)
-                    <div class="p-3.5 rounded-xl border border-[#86EFAC] bg-[#DCFCE7]/40 flex flex-wrap items-center justify-between gap-2 text-xs">
-                        <div>
-                            <div class="font-extrabold text-sm text-[#166534]">{{ $redemption->reward?->name }}</div>
-                            <div class="text-[#1F1A17] mt-0.5 font-mono font-bold">Kode: {{ $redemption->voucher_code }}</div>
+                    <div class="p-3.5 rounded-xl border border-[#86EFAC] bg-[#DCFCE7]/40 flex flex-wrap items-center justify-between gap-2.5 text-xs">
+                        <div class="min-w-0">
+                            <div class="font-extrabold text-sm text-[#166534] break-words">{{ $redemption->reward?->name }}</div>
+                            <div class="text-[#1F1A17] mt-0.5 font-mono font-bold break-all">Kode: {{ $redemption->voucher_code }}</div>
                             @if($redemption->expires_at)
                                 <div class="text-[#6F6259] text-[11px]">Berlaku hingga: {{ $redemption->expires_at->timezone('Asia/Jakarta')->format('d M Y') }}</div>
                             @endif
                         </div>
-                        <a href="{{ route('checkout.index', ['reward_redemption_id' => $redemption->id]) }}"
-                           class="px-3.5 py-2 rounded-xl bg-[#166534] text-white text-xs font-bold hover:bg-emerald-900 shadow-sm">
-                            Gunakan di Checkout
+                        <a href="{{ count((array) session('customer_cart', [])) > 0 ? route('checkout.index', ['reward_redemption_id' => $redemption->id]) : route('menu.index') }}"
+                           class="min-h-[42px] inline-flex items-center px-3.5 py-2 rounded-xl bg-[#166534] text-white text-xs font-bold hover:bg-emerald-900 shadow-sm shrink-0 transition">
+                            {{ count((array) session('customer_cart', [])) > 0 ? 'Gunakan di Checkout' : 'Pesan Menu' }}
                         </a>
                     </div>
                 @endforeach
@@ -76,21 +76,22 @@
     </div>
 
     <!-- Rewards Catalogue -->
-    <div class="bg-white rounded-2xl border border-[#E6DED2] p-5 shadow-sm space-y-3">
-        <div class="flex items-center justify-between">
+    <div class="bg-white rounded-2xl border border-[#E6DED2] p-4 sm:p-5 shadow-sm space-y-3">
+        <div class="flex flex-wrap items-center justify-between gap-2">
             <h2 class="text-base font-extrabold text-[#1F1A17]">Katalog Penukaran Reward</h2>
             <span class="text-xs text-[#6F6259] font-medium">Tukar poin dengan diskon</span>
         </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
             @forelse($rewards as $reward)
                 @php
                     $canRedeem = $member->points_balance >= $reward->points_cost;
+                    $confirmMsg = 'Tukar ' . number_format($reward->points_cost, 0, ',', '.') . ' poin untuk voucher ' . $reward->name . '?';
                 @endphp
                 <div class="p-4 rounded-xl border border-[#E6DED2] bg-[#FAF6EF] flex flex-col justify-between">
                     <div>
                         <div class="flex items-start justify-between gap-2">
-                            <h3 class="font-bold text-sm text-[#1F1A17]">{{ $reward->name }}</h3>
-                            <span class="px-2 py-0.5 rounded-full bg-[#3B2A20] text-[#FAF6EF] text-[11px] font-extrabold tabular-nums shrink-0">
+                            <h3 class="font-bold text-sm text-[#1F1A17] break-words">{{ $reward->name }}</h3>
+                            <span class="px-2 py-0.5 rounded-full bg-[#3B2A20] text-[#FAF6EF] text-[11px] font-extrabold tabular-nums shrink-0 whitespace-nowrap">
                                 {{ number_format($reward->points_cost, 0, ',', '.') }} Poin
                             </span>
                         </div>
@@ -105,45 +106,46 @@
                     <div class="mt-4 pt-3 border-t border-[#E6DED2]">
                         @if($canRedeem)
                             <form method="POST" action="{{ route('member.rewards.redeem', ['reward' => $reward->id]) }}"
-                                  onsubmit="return confirm('Tukar {{ number_format($reward->points_cost, 0, ',', '.') }} poin untuk voucher {{ $reward->name }}?');">
+                                  data-confirm="{{ $confirmMsg }}"
+                                  onsubmit="if (!confirm(this.dataset.confirm)) return false; this.querySelector('button[type=submit]').disabled = true;">
                                 @csrf
-                                <button type="submit" class="w-full min-h-[40px] rounded-xl bg-[#1F7A4C] text-white text-xs font-bold hover:bg-emerald-800 transition shadow-sm">
+                                <button type="submit" class="w-full min-h-[44px] rounded-xl bg-[#1F7A4C] text-white text-xs font-bold hover:bg-emerald-800 transition shadow-sm">
                                     Tukar Reward ({{ number_format($reward->points_cost, 0, ',', '.') }} Poin)
                                 </button>
                             </form>
                         @else
-                            <button type="button" disabled class="w-full min-h-[40px] rounded-xl bg-gray-200 text-gray-500 text-xs font-bold cursor-not-allowed">
+                            <button type="button" disabled class="w-full min-h-[44px] rounded-xl bg-gray-200 text-gray-500 text-xs font-bold cursor-not-allowed">
                                 Butuh {{ number_format($reward->points_cost - $member->points_balance, 0, ',', '.') }} Poin Lagi
                             </button>
                         @endif
                     </div>
                 </div>
             @empty
-                <p class="text-xs text-[#6F6259] col-span-2">Belum ada reward yang aktif saat ini.</p>
+                <p class="text-xs text-[#6F6259] sm:col-span-2 lg:col-span-3">Belum ada reward yang aktif saat ini.</p>
             @endforelse
         </div>
     </div>
 
     <!-- Point Ledger History -->
-    <div class="bg-white rounded-2xl border border-[#E6DED2] p-5 shadow-sm space-y-3">
+    <div class="bg-white rounded-2xl border border-[#E6DED2] p-4 sm:p-5 shadow-sm space-y-3">
         <h2 class="text-base font-extrabold text-[#1F1A17]">Riwayat Mutasi Poin</h2>
         @if($ledgers->isEmpty())
             <p class="text-xs text-[#6F6259]">Belum ada catatan mutasi poin loyalti.</p>
         @else
             <div class="divide-y divide-[#F2ECE1] text-xs">
                 @foreach($ledgers as $ledger)
-                    <div class="py-2.5 flex items-center justify-between gap-2">
-                        <div>
-                            <div class="font-bold text-[#1F1A17]">{{ $ledger->note ?: ($ledger->type === 'earn' ? 'Perolehan Poin' : ($ledger->type === 'redeem' ? 'Penukaran Reward' : 'Penyesuaian Poin')) }}</div>
-                            <div class="text-[11px] text-[#6F6259]">
-                                {{ $ledger->created_at?->timezone('Asia/Jakarta')->format('d M Y H:i') }}
+                    <div class="py-2.5 flex items-center justify-between gap-3">
+                        <div class="min-w-0">
+                            <div class="font-bold text-[#1F1A17] break-words">{{ $ledger->note ?: ($ledger->type === 'earn' ? 'Perolehan Poin' : ($ledger->type === 'redeem' ? 'Penukaran Reward' : 'Penyesuaian Poin')) }}</div>
+                            <div class="text-[11px] text-[#6F6259] flex flex-wrap gap-x-1">
+                                <span>{{ $ledger->created_at?->timezone('Asia/Jakarta')->format('d M Y H:i') }}</span>
                                 @if($ledger->order)
-                                    • <a href="{{ route('member.orders.show', ['order' => $ledger->order->order_number]) }}" class="font-mono text-[#A9552F] hover:underline">{{ $ledger->order->order_number }}</a>
+                                    <span>• <a href="{{ route('member.orders.show', ['order' => $ledger->order->order_number]) }}" class="font-mono text-[#A9552F] hover:underline">{{ $ledger->order->order_number }}</a></span>
                                 @endif
-                                • Saldo Akhir: <strong class="text-[#3B2A20]">{{ number_format($ledger->balance_after, 0, ',', '.') }} Poin</strong>
+                                <span>• Saldo Akhir: <strong class="text-[#3B2A20]">{{ number_format($ledger->balance_after, 0, ',', '.') }} Poin</strong></span>
                             </div>
                         </div>
-                        <div class="font-extrabold text-sm tabular-nums shrink-0 {{ $ledger->points >= 0 ? 'text-[#1F7A4C]' : 'text-[#B91C1C]' }}">
+                        <div class="font-extrabold text-sm tabular-nums shrink-0 whitespace-nowrap {{ $ledger->points >= 0 ? 'text-[#1F7A4C]' : 'text-[#B91C1C]' }}">
                             {{ $ledger->points >= 0 ? '+' : '' }}{{ number_format($ledger->points, 0, ',', '.') }}
                         </div>
                     </div>

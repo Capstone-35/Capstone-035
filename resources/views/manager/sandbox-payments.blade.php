@@ -5,20 +5,20 @@
 @section('content')
 <div class="space-y-6">
     <div class="p-4 rounded-2xl bg-amber-50 border border-amber-300 text-xs text-amber-950 space-y-1">
-        <div class="font-extrabold text-sm flex items-center gap-2">
-            <span class="px-2 py-0.5 rounded bg-amber-600 text-white text-[10px] uppercase">SIMULASI</span>
-            Simulator Callback Webhook QRIS (NFR-06 Idempotent Payment Testing)
+        <div class="font-extrabold text-sm flex flex-wrap items-center gap-2">
+            <span class="px-2 py-0.5 rounded bg-amber-600 text-white text-[10px] uppercase shrink-0">SIMULASI</span>
+            <span>Simulator Callback Webhook QRIS (NFR-06 Idempotent Payment Testing)</span>
         </div>
         <p>
             Modul ini memungkinkan Manager menguji perilaku sistem saat menerima notifikasi pembayaran QRIS dari provider gateway:
             skenario <strong>Berhasil (Paid)</strong>, <strong>Gagal (Failed)</strong>, <strong>Kedaluwarsa (Expired)</strong>,
             <strong>Notifikasi Ganda Replay (Duplicate Idempotent)</strong>, <strong>Nominal Tidak Sesuai (Amount Mismatch)</strong>,
-            hingga <strong>HMAC Signature Tidak Valid</strong>.
+            <strong>Gateway Timeout</strong>, hingga <strong>HMAC Signature Tidak Valid</strong>.
         </p>
     </div>
 
     <!-- Active QRIS Payments -->
-    <div class="bg-white rounded-2xl border border-[#E6DED2] p-5 shadow-sm space-y-4">
+    <div class="bg-white rounded-2xl border border-[#E6DED2] p-4 sm:p-5 shadow-sm space-y-4">
         <h3 class="text-sm font-extrabold text-[#1F1A17] border-b border-[#F2ECE1] pb-2">Transaksi QRIS Terdaftar</h3>
 
         @if($qrisPayments->isEmpty())
@@ -26,33 +26,34 @@
         @else
             <div class="space-y-3">
                 @foreach($qrisPayments as $qPayment)
-                    <div class="p-4 rounded-xl border border-[#E6DED2] bg-[#FAF6EF] flex flex-wrap items-center justify-between gap-3 text-xs">
-                        <div>
-                            <div class="flex items-center gap-2">
+                    <div class="p-4 rounded-xl border border-[#E6DED2] bg-[#FAF6EF] flex flex-col lg:flex-row lg:items-center justify-between gap-3 text-xs">
+                        <div class="min-w-0">
+                            <div class="flex flex-wrap items-center gap-2">
                                 <span class="font-mono font-bold text-sm text-[#1F1A17]">{{ $qPayment->order?->order_number }}</span>
                                 <x-status-badge :status="$qPayment->status->value" />
                             </div>
-                            <div class="font-mono text-[11px] text-[#6F6259] mt-0.5">Ref: {{ $qPayment->provider_reference }}</div>
+                            <div class="font-mono text-[11px] text-[#6F6259] mt-0.5 break-all">Ref: {{ $qPayment->provider_reference }}</div>
                             <div class="text-[#3B2A20] font-extrabold text-sm mt-1 tabular-nums">
                                 Tagihan: Rp{{ number_format($qPayment->amount, 0, ',', '.') }}
                             </div>
                         </div>
 
                         <!-- Scenarios form -->
-                        <form method="POST" action="{{ route('sandbox.payments.trigger') }}" class="flex flex-wrap items-center gap-2">
+                        <form method="POST" action="{{ route('sandbox.payments.trigger') }}" class="flex flex-col sm:flex-row sm:items-center gap-2 w-full lg:w-auto">
                             @csrf
                             <input type="hidden" name="payment_id" value="{{ $qPayment->id }}">
 
-                            <select name="scenario" class="px-2.5 py-1.5 rounded-lg border border-[#D6CBBC] bg-white font-bold text-xs">
+                            <select name="scenario" class="w-full sm:w-auto max-w-full min-w-0 px-2.5 py-2 rounded-lg border border-[#D6CBBC] bg-white font-bold text-xs">
                                 <option value="paid">1. Sukses Dibayar (Paid)</option>
                                 <option value="duplicate">2. Replay Duplicate (Idempotent)</option>
                                 <option value="amount_mismatch">3. Nominal Kurang (Amount Mismatch)</option>
                                 <option value="failed">4. Pembayaran Gagal (Failed)</option>
                                 <option value="expired">5. QRIS Kedaluwarsa (Expired)</option>
-                                <option value="invalid_signature">6. Bad Signature (Reject 401)</option>
+                                <option value="timeout">6. Gateway Timeout (Timeout)</option>
+                                <option value="invalid_signature">7. Bad Signature (Reject 401)</option>
                             </select>
 
-                            <button type="submit" class="px-3.5 py-1.5 rounded-lg bg-[#3B2A20] text-white font-bold hover:bg-[#2A1E17]">
+                            <button type="submit" class="w-full sm:w-auto min-h-[38px] px-4 py-2 rounded-lg bg-[#3B2A20] text-white font-bold hover:bg-[#2A1E17] whitespace-nowrap shrink-0">
                                 Tembak Webhook
                             </button>
                         </form>
@@ -68,28 +69,28 @@
             <h3 class="text-sm font-extrabold text-[#1F1A17]">Log Kejadian Webhook Masuk (Tabel payment_webhook_events)</h3>
         </div>
         <div class="overflow-x-auto">
-            <table class="w-full text-left text-xs">
+            <table class="w-full min-w-[700px] text-left text-xs">
                 <thead class="bg-[#F2ECE1] border-b border-[#E6DED2] text-[#3B2A20] font-extrabold uppercase">
                     <tr>
                         <th class="px-4 py-3">Event ID</th>
-                        <th class="px-4 py-3">Provider</th>
-                        <th class="px-4 py-3">Waktu Masuk</th>
-                        <th class="px-4 py-3 text-center">HMAC Valid</th>
-                        <th class="px-4 py-3 text-center">Hasil Pemrosesan</th>
+                        <th class="px-4 py-3 whitespace-nowrap">Provider</th>
+                        <th class="px-4 py-3 whitespace-nowrap">Waktu Masuk</th>
+                        <th class="px-4 py-3 text-center whitespace-nowrap">HMAC Valid</th>
+                        <th class="px-4 py-3 text-center whitespace-nowrap">Hasil Pemrosesan</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-[#F2ECE1]">
                     @forelse($webhookLogs as $log)
                         <tr class="hover:bg-[#FAF6EF]/60">
-                            <td class="px-4 py-3 font-mono font-bold">{{ $log->event_id }}</td>
-                            <td class="px-4 py-3 font-semibold uppercase text-[#6F6259]">{{ $log->provider }}</td>
-                            <td class="px-4 py-3 text-[#6F6259]">{{ $log->created_at?->timezone('Asia/Jakarta')->format('d/m/Y H:i:s') }}</td>
-                            <td class="px-4 py-3 text-center">
+                            <td class="px-4 py-3 font-mono font-bold break-all">{{ $log->event_id }}</td>
+                            <td class="px-4 py-3 font-semibold uppercase text-[#6F6259] whitespace-nowrap">{{ $log->provider }}</td>
+                            <td class="px-4 py-3 text-[#6F6259] whitespace-nowrap">{{ $log->created_at?->timezone('Asia/Jakarta')->format('d/m/Y H:i:s') }}</td>
+                            <td class="px-4 py-3 text-center whitespace-nowrap">
                                 <span class="px-2 py-0.5 rounded text-[10px] font-bold {{ $log->signature_valid ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800' }}">
                                     {{ $log->signature_valid ? 'VALID' : 'INVALID' }}
                                 </span>
                             </td>
-                            <td class="px-4 py-3 text-center">
+                            <td class="px-4 py-3 text-center whitespace-nowrap">
                                 <span class="px-2 py-0.5 rounded font-mono font-bold text-[11px] bg-gray-100 text-[#1F1A17]">
                                     {{ $log->result }}
                                 </span>

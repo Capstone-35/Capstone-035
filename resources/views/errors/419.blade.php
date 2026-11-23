@@ -15,10 +15,14 @@
         <p class="mt-2 text-sm text-[#6F6259]">
             Sesi keamanan telah kedaluwarsa setelah 30 menit tidak aktif (NFR-09). Silakan muat ulang halaman dan coba kembali.
         </p>
-        <div class="mt-6">
-            <a href="{{ url()->previous() ?: route('menu.index') }}"
-               class="inline-flex items-center justify-center min-h-[44px] px-6 py-2.5 rounded-xl bg-[#3B2A20] text-[#FAF6EF] text-sm font-bold hover:bg-[#2A1E17] transition">
+        <div class="mt-6 flex flex-wrap items-center justify-center gap-2">
+            <button type="button" onclick="window.location.reload()"
+                    class="inline-flex items-center justify-center min-h-[44px] px-6 py-2.5 rounded-xl bg-[#3B2A20] text-[#FAF6EF] text-sm font-bold hover:bg-[#2A1E17] transition cursor-pointer">
                 Muat Ulang Halaman
+            </button>
+            <a href="{{ route('menu.index') }}"
+               class="inline-flex items-center justify-center min-h-[44px] px-5 py-2.5 rounded-xl border border-[#D6CBBC] text-[#3B2A20] text-sm font-bold hover:bg-[#F2ECE1] transition">
+                Ke Beranda
             </a>
         </div>
     </div>

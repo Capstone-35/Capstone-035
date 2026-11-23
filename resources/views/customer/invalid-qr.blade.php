@@ -1,7 +1,7 @@
 @extends('layouts.customer', ['title' => 'Kode QR Meja Tidak Valid'])
 
 @section('content')
-<div class="bg-white rounded-2xl border border-[#E6DED2] p-6 text-center shadow-sm">
+<div class="max-w-lg mx-auto bg-white rounded-2xl border border-[#E6DED2] p-5 sm:p-7 text-center shadow-sm">
     <div class="mx-auto w-14 h-14 rounded-2xl bg-[#FEE2E2] text-[#991B1B] flex items-center justify-center font-extrabold text-xl">
         QR
     </div>

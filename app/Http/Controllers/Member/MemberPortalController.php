@@ -91,15 +91,21 @@ class MemberPortalController extends Controller
         $user = Auth::user();
         $user->member()->firstOrFail();
 
+        $request->merge([
+            'email' => strtolower(trim((string) $request->input('email', ''))),
+            'phone' => trim((string) $request->input('phone', '')),
+        ]);
+
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:120'],
-            'email' => ['required', 'email', 'max:150', Rule::unique('users', 'email')->ignore($user->id)],
-            'phone' => ['required', 'string', 'max:30', Rule::unique('users', 'phone')->ignore($user->id)],
+            'name' => ['required', 'string', 'max:80'],
+            'email' => ['required', 'email', 'max:120', Rule::unique('users', 'email')->ignore($user->id)],
+            'phone' => ['required', 'string', 'min:9', 'max:30', Rule::unique('users', 'phone')->ignore($user->id)],
         ], [
             'name.required' => 'Nama lengkap wajib diisi.',
             'email.required' => 'Alamat email wajib diisi.',
             'email.unique' => 'Email ini sudah digunakan oleh akun lain.',
             'phone.required' => 'Nomor telepon/WhatsApp wajib diisi.',
+            'phone.min' => 'Nomor telepon minimal 9 karakter.',
             'phone.unique' => 'Nomor telepon ini sudah digunakan oleh akun lain.',
         ]);
 
@@ -130,6 +136,8 @@ class MemberPortalController extends Controller
         $user->update([
             'password' => Hash::make($validated['password']),
         ]);
+
+        $request->session()->regenerate();
 
         return redirect()->route('member.profile')->with('toast_success', 'Kata sandi akun Anda berhasil diperbarui.');
     }
@@ -199,7 +207,7 @@ class MemberPortalController extends Controller
             abort(404);
         }
 
-        $order->load('items.product');
+        $order->load('items.product.category');
 
         $cart = (array) $request->session()->get('customer_cart', []);
         $addedCount = 0;
@@ -207,7 +215,7 @@ class MemberPortalController extends Controller
 
         foreach ($order->items as $item) {
             $product = $item->product;
-            if (! $product || ! $product->is_active || ! $product->is_available) {
+            if (! $product || ! $product->is_active || ! $product->is_available || ! ($product->category?->is_active ?? false)) {
                 $skippedNames[] = $item->product_name;
 
                 continue;
@@ -217,12 +225,12 @@ class MemberPortalController extends Controller
             $lineKey = $product->id.'_'.md5(strtolower($note));
 
             if (isset($cart[$lineKey])) {
-                $cart[$lineKey]['quantity'] = min(99, (int) $cart[$lineKey]['quantity'] + (int) $item->quantity);
+                $cart[$lineKey]['quantity'] = min(99, (int) $cart[$lineKey]['quantity'] + max(1, (int) $item->quantity));
             } else {
                 $cart[$lineKey] = [
                     'line_key' => $lineKey,
                     'product_id' => $product->id,
-                    'quantity' => (int) $item->quantity,
+                    'quantity' => min(99, max(1, (int) $item->quantity)),
                     'note' => $note ?: null,
                 ];
             }
@@ -232,9 +240,11 @@ class MemberPortalController extends Controller
 
         $request->session()->put('customer_cart', $cart);
 
-        // Ensure a table is in session so the customer can checkout right away
+        // Ensure an active table is in session so the customer can checkout right away
         if (! $request->session()->has('qr_table_id')) {
-            $table = $order->table ?? DiningTable::query()->where('is_active', true)->orderBy('number')->first();
+            $table = ($order->table && $order->table->is_active)
+                ? $order->table
+                : DiningTable::query()->where('is_active', true)->orderBy('number')->first();
             if ($table) {
                 $request->session()->put('qr_table_id', $table->id);
                 $request->session()->put('qr_table_number', $table->number);

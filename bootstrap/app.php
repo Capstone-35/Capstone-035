@@ -39,6 +39,10 @@ return Application::configure(basePath: dirname(__DIR__))
 
             return route('login');
         });
+
+        $middleware->redirectUsersTo(function (Request $request) {
+            return $request->user()?->homeRoute() ?? route('menu.index');
+        });
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

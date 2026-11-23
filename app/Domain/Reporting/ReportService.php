@@ -86,55 +86,67 @@ class ReportService
             ];
         }
 
-        if ($period === 'per_bulan' && $month && preg_match('/^\d{4}-\d{2}$/', $month)) {
-            $parsed = Carbon::createFromFormat('Y-m-d', $month.'-01', 'Asia/Jakarta');
-            $start = $parsed->copy()->startOfMonth()->startOfDay();
-            $end = $parsed->copy()->endOfMonth()->endOfDay();
+        if ($period === 'per_bulan' && $month && preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $month)) {
+            try {
+                $parsed = Carbon::createFromFormat('Y-m-d', $month.'-01', 'Asia/Jakarta');
+                $start = $parsed->copy()->startOfMonth()->startOfDay();
+                $end = $parsed->copy()->endOfMonth()->endOfDay();
 
-            return [
-                'start' => $start,
-                'end' => $end,
-                'group' => in_array($groupBy, ['harian', 'bulanan'], true) ? $groupBy : 'harian',
-                'label' => 'Bulan '.$this->formatMonthYearId($start),
-            ];
+                return [
+                    'start' => $start,
+                    'end' => $end,
+                    'group' => in_array($groupBy, ['harian', 'bulanan'], true) ? $groupBy : 'harian',
+                    'label' => 'Bulan '.$this->formatMonthYearId($start),
+                ];
+            } catch (\Throwable) {
+                // Fall through to default period
+            }
         }
 
-        if ($period === 'rentang_bulan' && $monthFrom && $monthTo && preg_match('/^\d{4}-\d{2}$/', $monthFrom) && preg_match('/^\d{4}-\d{2}$/', $monthTo)) {
-            $parsedFrom = Carbon::createFromFormat('Y-m-d', $monthFrom.'-01', 'Asia/Jakarta');
-            $parsedTo = Carbon::createFromFormat('Y-m-d', $monthTo.'-01', 'Asia/Jakarta');
+        if ($period === 'rentang_bulan' && $monthFrom && $monthTo && preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $monthFrom) && preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $monthTo)) {
+            try {
+                $parsedFrom = Carbon::createFromFormat('Y-m-d', $monthFrom.'-01', 'Asia/Jakarta');
+                $parsedTo = Carbon::createFromFormat('Y-m-d', $monthTo.'-01', 'Asia/Jakarta');
 
-            if ($parsedTo->lt($parsedFrom)) {
-                [$parsedFrom, $parsedTo] = [$parsedTo, $parsedFrom];
+                if ($parsedTo->lt($parsedFrom)) {
+                    [$parsedFrom, $parsedTo] = [$parsedTo, $parsedFrom];
+                }
+
+                $start = $parsedFrom->copy()->startOfMonth()->startOfDay();
+                $end = $parsedTo->copy()->endOfMonth()->endOfDay();
+                $sameMonth = $start->format('Y-m') === $end->format('Y-m');
+                $defaultGroup = $sameMonth ? 'harian' : 'bulanan';
+
+                return [
+                    'start' => $start,
+                    'end' => $end,
+                    'group' => in_array($groupBy, ['harian', 'bulanan'], true) ? $groupBy : $defaultGroup,
+                    'label' => $sameMonth
+                        ? 'Bulan '.$this->formatMonthYearId($start)
+                        : 'Rentang Bulan: '.$this->formatMonthYearId($start).' – '.$this->formatMonthYearId($end),
+                ];
+            } catch (\Throwable) {
+                // Fall through to default period
             }
-
-            $start = $parsedFrom->copy()->startOfMonth()->startOfDay();
-            $end = $parsedTo->copy()->endOfMonth()->endOfDay();
-            $sameMonth = $start->format('Y-m') === $end->format('Y-m');
-            $defaultGroup = $sameMonth ? 'harian' : 'bulanan';
-
-            return [
-                'start' => $start,
-                'end' => $end,
-                'group' => in_array($groupBy, ['harian', 'bulanan'], true) ? $groupBy : $defaultGroup,
-                'label' => $sameMonth
-                    ? 'Bulan '.$this->formatMonthYearId($start)
-                    : 'Rentang Bulan: '.$this->formatMonthYearId($start).' – '.$this->formatMonthYearId($end),
-            ];
         }
 
         if ($period === 'custom' && $dateFrom && $dateTo) {
-            $start = Carbon::parse($dateFrom, 'Asia/Jakarta')->startOfDay();
-            $end = Carbon::parse($dateTo, 'Asia/Jakarta')->endOfDay();
-            if ($end->lt($start)) {
-                [$start, $end] = [$end->copy()->startOfDay(), $start->copy()->endOfDay()];
-            }
+            try {
+                $start = Carbon::parse($dateFrom, 'Asia/Jakarta')->startOfDay();
+                $end = Carbon::parse($dateTo, 'Asia/Jakarta')->endOfDay();
+                if ($end->lt($start)) {
+                    [$start, $end] = [$end->copy()->startOfDay(), $start->copy()->endOfDay()];
+                }
 
-            return [
-                'start' => $start,
-                'end' => $end,
-                'group' => in_array($groupBy, ['harian', 'bulanan'], true) ? $groupBy : ($start->diffInDays($end) > 60 ? 'bulanan' : 'harian'),
-                'label' => $start->format('d M Y').' – '.$end->format('d M Y'),
-            ];
+                return [
+                    'start' => $start,
+                    'end' => $end,
+                    'group' => in_array($groupBy, ['harian', 'bulanan'], true) ? $groupBy : ($start->diffInDays($end) > 60 ? 'bulanan' : 'harian'),
+                    'label' => $start->format('d M Y').' – '.$end->format('d M Y'),
+                ];
+            } catch (\Throwable) {
+                // Fall through to default period
+            }
         }
 
         // Default 'bulanan' (last 30 days)
@@ -208,6 +220,7 @@ class ReportService
 
         // Average prep time Dibayar -> Siap in minutes
         $prepOrders = Order::query()
+            ->paidRevenue()
             ->whereNotNull('paid_at')
             ->whereNotNull('ready_at')
             ->whereBetween('created_at', [$start, $end])
@@ -279,7 +292,7 @@ class ReportService
                 $label = $this->formatMonthYearId($dt);
             } elseif ($groupBy === 'mingguan') {
                 $weekStart = $dt->copy()->startOfWeek();
-                $key = $weekStart->format('Y-W');
+                $key = $weekStart->format('o-W');
                 $label = 'Minggu '.$weekStart->format('d M Y');
             } else {
                 $key = $dt->format('Y-m-d');

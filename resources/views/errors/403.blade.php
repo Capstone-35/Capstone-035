@@ -12,8 +12,15 @@
             403
         </div>
         <h1 class="mt-4 text-xl font-extrabold text-[#1F1A17]">Anda tidak memiliki akses ke halaman ini</h1>
+        @php
+            $rawMsg = isset($exception) ? trim((string) $exception->getMessage()) : '';
+            $isEnglishRoleMsg = str_starts_with($rawMsg, 'User does not have');
+            $displayMsg = ($rawMsg !== '' && ! $isEnglishRoleMsg)
+                ? $rawMsg
+                : 'Peran akun Anda tidak memiliki izin untuk membuka modul atau tindakan yang diminta.';
+        @endphp
         <p class="mt-2 text-sm text-[#6F6259]">
-            {{ $exception->getMessage() ?: 'Peran akun Anda tidak memiliki izin untuk membuka modul atau tindakan yang diminta.' }}
+            {{ $displayMsg }}
         </p>
         <div class="mt-6">
             <a href="{{ auth()->check() ? auth()->user()->homeRoute() : route('menu.index') }}"

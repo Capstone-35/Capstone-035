@@ -4,16 +4,16 @@
 
 @section('content')
 <div class="space-y-6">
-    <div class="bg-white rounded-2xl border border-[#E6DED2] p-5 shadow-sm space-y-3">
-        <div class="flex items-start justify-between gap-3">
-            <div>
+    <div class="bg-white rounded-2xl border border-[#E6DED2] p-4 sm:p-5 shadow-sm space-y-3">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+            <div class="min-w-0">
                 <a href="{{ route('manager.rfm.index') }}" class="text-xs font-bold text-[#6F6259] hover:text-[#3B2A20]">
                     ← Kembali ke Ikhtisar RFM
                 </a>
-                <h2 class="text-xl font-extrabold text-[#1F1A17] mt-1">{{ $segment->name }}</h2>
+                <h2 class="text-lg sm:text-xl font-extrabold text-[#1F1A17] mt-1">{{ $segment->name }}</h2>
                 <p class="text-xs text-[#6F6259]">{{ $segment->description }}</p>
             </div>
-            <span class="px-3 py-1.5 rounded-full bg-amber-100 text-amber-900 font-extrabold text-xs">
+            <span class="px-3 py-1.5 rounded-full bg-amber-100 text-amber-900 font-extrabold text-xs shrink-0 whitespace-nowrap">
                 Prioritas Evaluasi #{{ $segment->priority }}
             </span>
         </div>
@@ -36,16 +36,16 @@
     <!-- Members in this segment -->
     <div class="bg-white rounded-2xl border border-[#E6DED2] shadow-sm overflow-hidden">
         <div class="overflow-x-auto">
-            <table class="w-full text-left text-xs">
+            <table class="w-full min-w-[740px] text-left text-xs">
                 <thead class="bg-[#F2ECE1] border-b border-[#E6DED2] text-[#3B2A20] font-extrabold uppercase">
                     <tr>
                         <th class="px-4 py-3">Member</th>
                         <th class="px-4 py-3">Kontak</th>
-                        <th class="px-4 py-3 text-center">Recency</th>
-                        <th class="px-4 py-3 text-center">Frequency</th>
-                        <th class="px-4 py-3 text-right">Monetary</th>
-                        <th class="px-4 py-3 text-center">Skor RFM</th>
-                        <th class="px-4 py-3 text-center">Profil</th>
+                        <th class="px-4 py-3 text-center whitespace-nowrap">Recency</th>
+                        <th class="px-4 py-3 text-center whitespace-nowrap">Frequency</th>
+                        <th class="px-4 py-3 text-right whitespace-nowrap">Monetary</th>
+                        <th class="px-4 py-3 text-center whitespace-nowrap">Skor RFM</th>
+                        <th class="px-4 py-3 text-center whitespace-nowrap">Profil</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-[#F2ECE1]">
@@ -56,15 +56,17 @@
                                 <div class="font-mono text-[11px] text-[#A9552F]">{{ $res->member?->member_code }}</div>
                             </td>
                             <td class="px-4 py-3 text-[#6F6259]">
-                                <div>{{ $res->member?->user?->email }}</div>
+                                <div class="break-all">{{ $res->member?->user?->email }}</div>
                                 <div class="text-[11px]">{{ $res->member?->user?->phone }}</div>
                             </td>
-                            <td class="px-4 py-3 text-center font-bold">{{ $res->recency_days ?? '—' }} Hari (R={{ $res->r_score }})</td>
-                            <td class="px-4 py-3 text-center font-bold">{{ $res->frequency }} Order (F={{ $res->f_score }})</td>
-                            <td class="px-4 py-3 text-right font-extrabold tabular-nums">Rp{{ number_format($res->monetary, 0, ',', '.') }} (M={{ $res->m_score }})</td>
-                            <td class="px-4 py-3 text-center font-mono font-black text-sm text-[#3B2A20]">{{ $res->r_score }}{{ $res->f_score }}{{ $res->m_score }}</td>
-                            <td class="px-4 py-3 text-center">
-                                <a href="{{ route('manager.members.show', ['member' => $res->member_id]) }}" class="px-2.5 py-1 rounded-lg border border-[#D6CBBC] font-bold">
+                            <td class="px-4 py-3 text-center font-bold whitespace-nowrap">
+                                {{ $res->recency_days !== null ? $res->recency_days . ' Hari' : '—' }} (R={{ $res->r_score }})
+                            </td>
+                            <td class="px-4 py-3 text-center font-bold whitespace-nowrap">{{ $res->frequency }} Order (F={{ $res->f_score }})</td>
+                            <td class="px-4 py-3 text-right font-extrabold tabular-nums whitespace-nowrap">Rp{{ number_format($res->monetary, 0, ',', '.') }} (M={{ $res->m_score }})</td>
+                            <td class="px-4 py-3 text-center font-mono font-black text-sm text-[#3B2A20] whitespace-nowrap">{{ $res->r_score }}{{ $res->f_score }}{{ $res->m_score }}</td>
+                            <td class="px-4 py-3 text-center whitespace-nowrap">
+                                <a href="{{ route('manager.members.show', ['member' => $res->member_id]) }}" class="inline-flex items-center px-2.5 py-1.5 rounded-lg border border-[#D6CBBC] font-bold hover:bg-[#F2ECE1]">
                                     Detail
                                 </a>
                             </td>

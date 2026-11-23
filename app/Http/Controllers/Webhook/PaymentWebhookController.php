@@ -102,7 +102,7 @@ class PaymentWebhookController extends Controller
         };
 
         $amount = $scenario === 'amount_mismatch'
-            ? max(1000, (int) $payment->amount - 5000)
+            ? ((int) $payment->amount > 1000 ? max(1000, (int) $payment->amount - 5000) : ((int) $payment->amount + 1000))
             : (int) $payment->amount;
 
         $payload = [
@@ -140,6 +140,10 @@ class PaymentWebhookController extends Controller
         }
 
         $order = Order::query()->where('public_token', $public_token)->firstOrFail();
+        if ($order->status !== \App\Enums\OrderStatus::MenungguPembayaran) {
+            return redirect()->route('order.track', ['public_token' => $order->public_token])
+                ->with('toast_info', 'Pesanan ini sudah tidak menunggu pembayaran.');
+        }
         $payment = Payment::query()
             ->where('order_id', $order->id)
             ->where('method', PaymentMethod::Qris->value)

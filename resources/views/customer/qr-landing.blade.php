@@ -1,7 +1,7 @@
 @extends('layouts.customer', ['title' => 'Selamat Datang di ' . $table->label])
 
 @section('content')
-<div class="bg-white rounded-2xl border border-[#E6DED2] p-6 shadow-sm text-center">
+<div class="max-w-lg mx-auto bg-white rounded-2xl border border-[#E6DED2] p-5 sm:p-7 shadow-sm text-center">
     <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#DCFCE7] text-[#166534] text-xs font-extrabold">
         <span class="w-2 h-2 rounded-full bg-[#166534]"></span>
         QR Meja Terverifikasi • {{ $table->label }}
@@ -34,9 +34,10 @@
                 </button>
             </form>
 
-            <div class="relative py-2">
-                <div class=" inset-0 flex items-center"><div class="w-full border-t border-[#E6DED2]"></div></div>
-                <span class="bg-white px-3 text-xs font-semibold text-[#6F6259]">Atau gunakan akun Member untuk Poin & Promo</span>
+            <div class="flex items-center gap-3 py-2">
+                <div class="flex-1 border-t border-[#E6DED2]"></div>
+                <span class="text-xs font-semibold text-[#6F6259] shrink-0">Atau gunakan akun Member untuk Poin & Promo</span>
+                <div class="flex-1 border-t border-[#E6DED2]"></div>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">

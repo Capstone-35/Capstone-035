@@ -9,6 +9,7 @@ use App\Domain\Payment\PaymentService;
 use App\Domain\Promotion\PromotionEngine;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentMethod;
+use App\Enums\PaymentStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\DiningTable;
@@ -23,6 +24,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
@@ -64,8 +66,8 @@ class PosController extends Controller
             ->sum('total_amount');
 
         $todayOrdersCount = Order::query()
+            ->paidRevenue()
             ->where('created_at', '>=', $todayStart)
-            ->where('status', '!=', OrderStatus::Dibatalkan->value)
             ->count();
 
         $pendingCashOrders = Order::query()
@@ -181,7 +183,12 @@ class PosController extends Controller
 
         $latestPayment = $order->payments->first();
         $qrisSvg = null;
-        if ($latestPayment && $latestPayment->method === PaymentMethod::Qris && $latestPayment->qris_payload) {
+        if (
+            $latestPayment
+            && $latestPayment->method === PaymentMethod::Qris
+            && $latestPayment->status === PaymentStatus::Pending
+            && $latestPayment->qris_payload
+        ) {
             $options = new QROptions([
                 'outputBase64' => false,
                 'addQuietzone' => true,
@@ -269,32 +276,41 @@ class PosController extends Controller
         ]);
 
         try {
-            $order = $this->orderService->create([
-                'client_request_id' => $validated['client_request_id'] ?? (string) Str::uuid(),
-                'source' => 'pos',
-                'table_id' => ! empty($validated['table_id']) ? (int) $validated['table_id'] : null,
-                'member_id' => ! empty($validated['member_id']) ? (int) $validated['member_id'] : null,
-                'customer_name' => $validated['customer_name'],
-                'customer_email' => $validated['customer_email'] ?? null,
-                'customer_phone' => $validated['customer_phone'] ?? null,
-                'items' => $validated['items'],
-                'promotion_id' => ! empty($validated['promotion_id']) ? (int) $validated['promotion_id'] : null,
-                'reward_redemption_id' => ! empty($validated['reward_redemption_id']) ? (int) $validated['reward_redemption_id'] : null,
-                'payment_method' => $validated['payment_method'],
-                'created_by' => Auth::id(),
-            ]);
+            $result = DB::transaction(function () use ($validated, $request) {
+                $order = $this->orderService->create([
+                    'client_request_id' => $validated['client_request_id'] ?? (string) Str::uuid(),
+                    'source' => 'pos',
+                    'table_id' => ! empty($validated['table_id']) ? (int) $validated['table_id'] : null,
+                    'member_id' => ! empty($validated['member_id']) ? (int) $validated['member_id'] : null,
+                    'customer_name' => $validated['customer_name'],
+                    'customer_email' => $validated['customer_email'] ?? null,
+                    'customer_phone' => $validated['customer_phone'] ?? null,
+                    'items' => $validated['items'],
+                    'promotion_id' => ! empty($validated['promotion_id']) ? (int) $validated['promotion_id'] : null,
+                    'reward_redemption_id' => ! empty($validated['reward_redemption_id']) ? (int) $validated['reward_redemption_id'] : null,
+                    'payment_method' => $validated['payment_method'],
+                    'created_by' => Auth::id(),
+                ]);
 
-            if (
-                $validated['payment_method'] === 'tunai'
-                && $request->boolean('confirm_cash_now')
-                && $order->status === OrderStatus::MenungguPembayaran
-            ) {
-                $cashReceived = isset($validated['cash_received']) && $validated['cash_received'] > 0
-                    ? (int) $validated['cash_received']
-                    : (int) $order->total_amount;
+                $paidNow = false;
+                if (
+                    $validated['payment_method'] === 'tunai'
+                    && $request->boolean('confirm_cash_now')
+                    && $order->status === OrderStatus::MenungguPembayaran
+                ) {
+                    $cashReceived = array_key_exists('cash_received', $validated) && $validated['cash_received'] !== null
+                        ? (int) $validated['cash_received']
+                        : (int) $order->total_amount;
 
-                $this->paymentService->confirmCash($order, Auth::user(), $cashReceived);
+                    $this->paymentService->confirmCash($order, Auth::user(), $cashReceived);
+                    $paidNow = true;
+                }
 
+                return ['order' => $order, 'paid_now' => $paidNow];
+            });
+
+            $order = $result['order'];
+            if ($result['paid_now']) {
                 return redirect()->route('pos.orders.show', ['order' => $order->order_number])
                     ->with('toast_success', "Pesanan POS {$order->order_number} berhasil dibuat dan dikonfirmasi Dibayar (Tunai).");
             }
@@ -408,7 +424,7 @@ class PosController extends Controller
             $this->orderService->cancel(
                 $order,
                 Auth::user(),
-                $validated['reason'] ?: 'Dibatalkan oleh Kasir sebelum pembayaran',
+                ($validated['reason'] ?? null) ?: 'Dibatalkan oleh Kasir sebelum pembayaran',
                 'pos'
             );
 
@@ -448,7 +464,10 @@ class PosController extends Controller
     {
         $statusFilter = $request->query('status');
         $methodFilter = $request->query('payment_method');
-        $dateFilter = $request->query('date', now()->toDateString());
+        $dateFilter = trim((string) $request->query('date', now()->toDateString()));
+        if ($dateFilter !== '' && ! preg_match('/^\d{4}-\d{2}-\d{2}$/', $dateFilter)) {
+            $dateFilter = now()->toDateString();
+        }
         $search = trim((string) $request->query('q', ''));
 
         $query = Order::query()
@@ -528,14 +547,33 @@ class PosController extends Controller
     {
         $validated = $request->validate([
             'channel' => ['required', 'in:email,whatsapp'],
-            'recipient' => ['nullable', 'string', 'max:150'],
+            'recipient' => ['nullable', 'string', 'max:120'],
         ]);
+
+        $order = $invoice->order;
+        $targetRecipient = trim((string) ($validated['recipient'] ?? ''));
+        if ($targetRecipient === '') {
+            $targetRecipient = $validated['channel'] === 'email'
+                ? trim((string) ($order?->customer_email ?? ''))
+                : trim((string) ($order?->customer_phone ?? ''));
+        }
+
+        if ($targetRecipient === '') {
+            return back()->with(
+                'toast_error',
+                'Penerima '.strtoupper($validated['channel']).' kosong. Mohon isi alamat tujuan terlebih dahulu.'
+            );
+        }
+
+        if ($validated['channel'] === 'email' && ! filter_var($targetRecipient, FILTER_VALIDATE_EMAIL)) {
+            return back()->with('toast_error', 'Format alamat email penerima tidak valid.');
+        }
 
         $delivery = $this->invoiceService->resend(
             $invoice,
             Auth::user(),
             $validated['channel'],
-            $validated['recipient'] ?? null
+            $targetRecipient
         );
 
         return back()->with(

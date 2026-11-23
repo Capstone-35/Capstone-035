@@ -34,8 +34,9 @@ class AuthController extends Controller
         ]);
 
         $contact = trim($credentials['contact']);
+        $contactLower = strtolower($contact);
         $user = User::query()
-            ->where('email', $contact)
+            ->where('email', $contactLower)
             ->orWhere('phone', $contact)
             ->first();
 
@@ -70,6 +71,11 @@ class AuthController extends Controller
 
     public function memberRegister(Request $request): RedirectResponse
     {
+        $request->merge([
+            'email' => strtolower(trim((string) $request->input('email', ''))),
+            'phone' => trim((string) $request->input('phone', '')),
+        ]);
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'min:2', 'max:60'],
             'email' => ['required', 'email', 'max:120', 'unique:users,email'],
@@ -101,6 +107,9 @@ class AuthController extends Controller
             $user->assignRole('member');
 
             $memberCode = 'MBR-774-'.str_pad((string) $user->id, 4, '0', STR_PAD_LEFT);
+            if (Member::query()->where('member_code', $memberCode)->exists()) {
+                $memberCode = 'MBR-774-'.strtoupper(substr(md5($user->id.'-'.microtime(true)), 0, 6));
+            }
             Member::query()->create([
                 'user_id' => $user->id,
                 'member_code' => $memberCode,
@@ -158,7 +167,7 @@ class AuthController extends Controller
 
         $user->update(['last_login_at' => now()]);
 
-        return redirect($user->homeRoute())->with('toast_success', "Selamat bertugas, {$user->name}!");
+        return redirect()->intended($user->homeRoute())->with('toast_success', "Selamat bertugas, {$user->name}!");
     }
 
     public function logout(Request $request): RedirectResponse

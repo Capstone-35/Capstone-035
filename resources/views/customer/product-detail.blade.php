@@ -1,17 +1,17 @@
 @extends('layouts.customer', ['title' => $product->name])
 
 @section('content')
-<div class="bg-white rounded-2xl border border-[#E6DED2] p-6 shadow-sm">
-    <a href="{{ route('menu.index') }}" class="inline-flex items-center text-xs font-bold text-[#6F6259] hover:text-[#3B2A20] mb-4">
+<div class="max-w-2xl mx-auto bg-white rounded-2xl border border-[#E6DED2] p-4 sm:p-6 shadow-sm">
+    <a href="{{ route('menu.index') }}" class="inline-flex items-center min-h-[40px] text-xs font-bold text-[#6F6259] hover:text-[#3B2A20] mb-3">
         ← Kembali ke Katalog Menu
     </a>
 
-    <div class="flex items-start justify-between gap-3">
-        <div>
+    <div class="flex flex-wrap sm:flex-nowrap items-start justify-between gap-3">
+        <div class="min-w-0">
             <span class="text-xs font-bold uppercase tracking-wider text-[#A9552F]">{{ $product->category?->name }}</span>
-            <h1 class="text-2xl font-extrabold text-[#1F1A17] mt-1">{{ $product->name }}</h1>
+            <h1 class="text-xl sm:text-2xl font-extrabold text-[#1F1A17] mt-1 break-words">{{ $product->name }}</h1>
         </div>
-        <div class="text-xl font-extrabold text-[#3B2A20] tabular-nums">
+        <div class="text-lg sm:text-xl font-extrabold text-[#3B2A20] tabular-nums whitespace-nowrap shrink-0">
             {{ $product->formattedPrice() }}
         </div>
     </div>
@@ -23,7 +23,7 @@
     @endif
 
     @if($product->is_available)
-        <form method="POST" action="{{ route('cart.items.store') }}" class="mt-6 pt-5 border-t border-[#E6DED2] space-y-4">
+        <form method="POST" action="{{ route('cart.items.store') }}" onsubmit="this.querySelector('button[type=submit]').disabled=true;" class="mt-6 pt-5 border-t border-[#E6DED2] space-y-4">
             @csrf
             <input type="hidden" name="product_id" value="{{ $product->id }}">
 
@@ -31,7 +31,7 @@
                 <label for="quantity" class="block text-xs font-bold uppercase tracking-wider text-[#3B2A20] mb-1.5">
                     Jumlah Pesanan
                 </label>
-                <input id="quantity" name="quantity" type="number" min="1" max="99" value="1" required
+                <input id="quantity" name="quantity" type="number" min="1" max="99" value="{{ old('quantity', 1) }}" required
                        class="w-32 min-h-[44px] px-3.5 py-2 rounded-xl border border-[#D6CBBC] bg-[#FAF6EF] text-base font-bold tabular-nums">
             </div>
 
