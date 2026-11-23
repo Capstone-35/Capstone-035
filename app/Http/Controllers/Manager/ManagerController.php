@@ -643,6 +643,7 @@ class ManagerController extends Controller
         return view('manager.product-form', [
             'product' => new Product([
                 'is_available' => true,
+                'is_featured' => false,
                 'is_active' => true,
                 'price' => 25000,
             ]),
@@ -660,6 +661,7 @@ class ManagerController extends Controller
             'price' => ['required', 'integer', 'min:1000', 'max:5000000'],
             'image_path' => ['nullable', 'string', 'max:255'],
             'is_available' => ['nullable', 'boolean'],
+            'is_featured' => ['nullable', 'boolean'],
             'is_active' => ['nullable', 'boolean'],
         ]);
 
@@ -673,6 +675,7 @@ class ManagerController extends Controller
             'price' => (int) $validated['price'],
             'image_path' => $validated['image_path'] ?: '/images/products/default-coffee.svg',
             'is_available' => $request->boolean('is_available', true),
+            'is_featured' => $request->boolean('is_featured', false),
             'is_active' => $request->boolean('is_active', true),
         ]);
 
@@ -698,6 +701,7 @@ class ManagerController extends Controller
             'price' => ['required', 'integer', 'min:1000', 'max:5000000'],
             'image_path' => ['nullable', 'string', 'max:255'],
             'is_available' => ['nullable', 'boolean'],
+            'is_featured' => ['nullable', 'boolean'],
             'is_active' => ['nullable', 'boolean'],
         ]);
 
@@ -708,6 +712,7 @@ class ManagerController extends Controller
             'price' => (int) $validated['price'],
             'image_path' => $validated['image_path'] ?: $product->image_path,
             'is_available' => $request->boolean('is_available', false),
+            'is_featured' => $request->boolean('is_featured', false),
             'is_active' => $request->boolean('is_active', false),
         ]);
 

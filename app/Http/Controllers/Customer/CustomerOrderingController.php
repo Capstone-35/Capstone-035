@@ -135,26 +135,36 @@ class CustomerOrderingController extends Controller
         $products = $productsQuery
             ->withSum(['orderItems as total_sold_qty' => fn ($q) => $q->whereHas('order', fn ($oq) => $oq->paidRevenue())], 'quantity')
             ->orderByDesc('is_available')
-            ->orderBy('name')
+            ->orderBy('id')
             ->get();
 
         $availableProducts = $products->where('is_available', true)->values();
-        $hasSalesData = $availableProducts->contains(fn (Product $p) => (int) ($p->total_sold_qty ?? 0) > 0);
+        $curatedFeatured = $availableProducts->where('is_featured', true)->values();
 
-        if ($hasSalesData) {
-            $featuredProducts = $availableProducts
-                ->sortByDesc(fn (Product $p) => (int) ($p->total_sold_qty ?? 0))
-                ->take(6)
-                ->values();
+        if ($curatedFeatured->isNotEmpty()) {
+            $featuredProducts = $curatedFeatured;
         } else {
-            $featuredProducts = $availableProducts
-                ->groupBy('category_id')
-                ->map(fn ($group) => $group->first())
-                ->values()
-                ->take(6);
+            $soldProducts = $availableProducts
+                ->filter(fn (Product $p) => (int) ($p->total_sold_qty ?? 0) > 0)
+                ->sortByDesc(fn (Product $p) => (int) ($p->total_sold_qty ?? 0))
+                ->values();
 
-            if ($featuredProducts->count() < min(4, $availableProducts->count())) {
-                $featuredProducts = $availableProducts->take(6)->values();
+            if ($soldProducts->count() >= 6) {
+                $featuredProducts = $soldProducts->take(6)->values();
+            } else {
+                $pickedIds = $soldProducts->pluck('id')->all();
+                $categoryReps = $availableProducts
+                    ->reject(fn (Product $p) => in_array($p->id, $pickedIds, true))
+                    ->groupBy('category_id')
+                    ->map(fn ($group) => $group->first())
+                    ->values();
+
+                $featuredProducts = $soldProducts
+                    ->concat($categoryReps)
+                    ->concat($availableProducts)
+                    ->unique('id')
+                    ->take(6)
+                    ->values();
             }
         }
 

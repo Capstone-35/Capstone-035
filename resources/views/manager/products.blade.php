@@ -54,7 +54,12 @@
                     @forelse($products as $prod)
                         <tr class="hover:bg-[#FAF6EF]/60 transition">
                             <td class="px-4 py-3.5">
-                                <div class="font-bold text-sm text-[#1F1A17]">{{ $prod->name }}</div>
+                                <div class="flex flex-wrap items-center gap-1.5">
+                                    <span class="font-bold text-sm text-[#1F1A17]">{{ $prod->name }}</span>
+                                    @if($prod->is_featured)
+                                        <span class="px-2 py-0.5 rounded-full bg-[#FEF3C7] text-[#92400E] text-[10px] font-extrabold whitespace-nowrap">★ Andalan</span>
+                                    @endif
+                                </div>
                                 <div class="text-[11px] text-[#6F6259] line-clamp-1">{{ $prod->description }}</div>
                             </td>
                             <td class="px-4 py-3.5 font-semibold text-[#6F6259] whitespace-nowrap">{{ $prod->category?->name }}</td>
