@@ -1,9 +1,7 @@
 @props(['title', 'description' => null, 'actionUrl' => null, 'actionLabel' => null])
 
 <div {{ $attributes->merge(['class' => 'rounded-2xl border border-dashed border-[#D6CBBC] bg-[#FAF6EF] p-6 sm:p-8 text-center']) }}>
-    <div class="mx-auto w-12 h-12 rounded-full bg-[#F2ECE1] flex items-center justify-center text-[#A9552F] font-bold text-lg">
-        774
-    </div>
+    <img src="{{ asset('images/logo-774.png') }}" alt="774 HUB" class="mx-auto w-12 h-12 rounded-full object-cover shadow-xs">
     <h3 class="mt-3 text-base font-bold text-[#1F1A17]">{{ $title }}</h3>
     @if($description)
         <p class="mt-1 text-sm text-[#6F6259] max-w-md mx-auto">{{ $description }}</p>

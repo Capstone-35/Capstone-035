@@ -5,14 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Login Staf Operasional — 774 HUB</title>
+    <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}?v=3">
+    <link rel="shortcut icon" href="{{ asset('favicon.ico') }}?v=3">
+    <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}?v=3">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="min-h-full bg-[#3B2A20] text-[#1F1A17] flex items-center justify-center p-4">
     <div class="max-w-md w-full bg-[#FAF6EF] rounded-2xl border border-[#E6DED2] p-6 sm:p-8 shadow-xl">
         <div class="flex items-center gap-3 mb-6">
-            <div class="w-12 h-12 rounded-2xl bg-[#3B2A20] text-[#FAF6EF] flex items-center justify-center font-extrabold text-base">
-                774
-            </div>
+            <img src="{{ asset('images/logo-774.png') }}" alt="774 HUB" class="w-12 h-12 rounded-full object-cover shrink-0 ring-1 ring-black/10">
             <div>
                 <h1 class="text-lg font-extrabold text-[#1F1A17]">Portal Staf 774 HUB</h1>
                 <p class="text-xs text-[#6F6259]">Kasir POS • Kitchen KDS • Manager • Owner</p>

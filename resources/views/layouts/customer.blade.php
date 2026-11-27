@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ isset($title) ? $title . ' — 774 HUB' : '774 HUB — Coffee & Roastery' }}</title>
+    <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}?v=3">
+    <link rel="shortcut icon" href="{{ asset('favicon.ico') }}?v=3">
+    <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}?v=3">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="min-h-full bg-[#FAF6EF] text-[#1F1A17] antialiased flex flex-col pb-20 md:pb-8 print:pb-0 print:bg-white">
@@ -34,9 +37,7 @@
     <header class="print:hidden sticky top-0 z-30 bg-[#FAF6EF]/95 backdrop-blur border-b border-[#E6DED2]">
         <div class="max-w-6xl mx-auto px-3.5 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2 sm:gap-4">
             <a href="{{ route('menu.index') }}" class="flex items-center gap-2 sm:gap-2.5 focus:outline-none min-w-0 shrink-0">
-                <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#3B2A20] text-[#FAF6EF] flex items-center justify-center font-extrabold text-sm tracking-tight shrink-0">
-                    774
-                </div>
+                <img src="{{ asset('images/logo-774.png') }}" alt="774 HUB" class="w-9 h-9 sm:w-10 sm:h-10 rounded-full object-cover shrink-0 ring-1 ring-black/10">
                 <div class="min-w-0">
                     <div class="font-extrabold text-sm sm:text-base leading-tight text-[#1F1A17] truncate">774 HUB</div>
                     <div class="hidden sm:block text-[11px] text-[#6F6259] font-medium truncate">Coffee & Roastery</div>

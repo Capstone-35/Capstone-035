@@ -22,10 +22,13 @@
 
     <div class="bg-white rounded-2xl border border-[#E6DED2] p-4 sm:p-6 shadow-sm space-y-5 print:border-0 print:shadow-none">
         <div class="flex flex-wrap items-start justify-between gap-4 border-b border-[#E6DED2] pb-4">
-            <div class="min-w-0">
-                <div class="text-xl font-extrabold text-[#3B2A20]">{{ $snapshot['outlet_name'] ?? '774 HUB' }}</div>
-                <div class="text-xs text-[#6F6259] mt-0.5">{{ $snapshot['outlet_address'] ?? 'Jl. Bung Tarjo No. 12, Yogyakarta' }}</div>
-                <div class="text-xs text-[#6F6259]">Telp: {{ $snapshot['outlet_phone'] ?? '0274-555774' }}</div>
+            <div class="flex items-start gap-3 min-w-0">
+                <img src="{{ asset('images/logo-774.png') }}" alt="774 HUB" class="w-11 h-11 rounded-full object-cover shrink-0 ring-1 ring-black/10">
+                <div class="min-w-0">
+                    <div class="text-xl font-extrabold text-[#3B2A20]">{{ $snapshot['outlet_name'] ?? '774 HUB' }}</div>
+                    <div class="text-xs text-[#6F6259] mt-0.5">{{ $snapshot['outlet_address'] ?? 'Jl. Bung Tarjo No. 12, Yogyakarta' }}</div>
+                    <div class="text-xs text-[#6F6259]">Telp: {{ $snapshot['outlet_phone'] ?? '0274-555774' }}</div>
+                </div>
             </div>
             <div class="text-left sm:text-right">
                 <span class="inline-block px-2.5 py-0.5 rounded-full bg-[#DCFCE7] text-[#166534] text-xs font-extrabold uppercase">

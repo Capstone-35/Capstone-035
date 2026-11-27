@@ -5,14 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>KDS Dapur & Barista — 774 HUB</title>
+    <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}?v=3">
+    <link rel="shortcut icon" href="{{ asset('favicon.ico') }}?v=3">
+    <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}?v=3">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="min-h-full bg-[#1F1A17] text-[#FAF6EF] antialiased flex flex-col">
     <header class="sticky top-0 z-30 bg-[#2C221D]/95 backdrop-blur border-b border-white/10 px-3.5 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
         <div class="flex items-center gap-3 min-w-0">
-            <div class="w-10 h-10 rounded-xl bg-[#A9552F] text-white flex items-center justify-center font-extrabold text-sm shrink-0">
-                774
-            </div>
+            <img src="{{ asset('images/logo-774.png') }}" alt="774 HUB" class="w-10 h-10 rounded-full object-cover shrink-0 ring-1 ring-white/20">
             <div class="min-w-0">
                 <h1 class="font-extrabold text-base sm:text-lg leading-tight text-white truncate">Kitchen Display System (KDS)</h1>
                 <p class="text-[11px] sm:text-xs text-[#FAF6EF]/70 truncate">774 HUB — Antrean Pesanan Dibayar (Real-Time)</p>
