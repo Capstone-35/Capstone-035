@@ -6,6 +6,13 @@
         ← Kembali ke Katalog Menu
     </a>
 
+    @if($product->imageUrl())
+        <div class="mb-4 overflow-hidden rounded-2xl border border-[#E6DED2] bg-[#FAF6EF]">
+            <img src="{{ $product->imageUrl() }}" alt="{{ $product->name }}"
+                 class="w-full max-h-72 object-cover">
+        </div>
+    @endif
+
     <div class="flex flex-wrap sm:flex-nowrap items-start justify-between gap-3">
         <div class="min-w-0">
             <span class="text-xs font-bold uppercase tracking-wider text-[#A9552F]">{{ $product->category?->name }}</span>

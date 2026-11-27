@@ -4,8 +4,11 @@ namespace Tests\Feature;
 
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\User;
 use Database\Seeders\MenuCatalogSeeder;
+use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Tests\TestCase;
 
 class MenuCatalogSeederTest extends TestCase
@@ -115,5 +118,47 @@ class MenuCatalogSeederTest extends TestCase
             'chicken-karaage-bowl',
             'mix-platter',
         ], $featuredProducts->pluck('slug')->all());
+    }
+
+    public function test_manager_can_upload_product_photo_and_it_renders_on_menu(): void
+    {
+        $this->seed([RolePermissionSeeder::class, MenuCatalogSeeder::class]);
+
+        $manager = User::factory()->create(['is_active' => true]);
+        $manager->assignRole('manager');
+
+        $product = Product::where('slug', 'butterscotch-best-seller')->firstOrFail();
+
+        // 1x1 valid PNG binary
+        $tinyPng = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=');
+        $uploaded = UploadedFile::fake()->createWithContent('butterscotch.png', $tinyPng);
+
+        $response = $this->actingAs($manager)->patch(route('manager.products.update', ['product' => $product->id]), [
+            'category_id' => $product->category_id,
+            'name' => $product->name,
+            'description' => $product->description,
+            'price' => $product->price,
+            'is_available' => '1',
+            'is_featured' => '1',
+            'is_active' => '1',
+            'image' => $uploaded,
+        ]);
+
+        $response->assertRedirect(route('manager.products.index'));
+        $product->refresh();
+
+        $this->assertNotNull($product->imageUrl());
+        $this->assertStringStartsWith('/images/products/', $product->image_path);
+
+        try {
+            $menuResp = $this->get('/menu');
+            $menuResp->assertOk();
+            $menuResp->assertSee($product->imageUrl(), false);
+        } finally {
+            $file = public_path(ltrim((string) $product->image_path, '/'));
+            if (is_file($file)) {
+                @unlink($file);
+            }
+        }
     }
 }

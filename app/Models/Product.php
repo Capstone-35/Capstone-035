@@ -50,4 +50,30 @@ class Product extends Model
     {
         return 'Rp'.number_format($this->price, 0, ',', '.');
     }
+
+    /**
+     * Resolve a web-accessible image URL only when the file actually exists (or is an HTTP URL).
+     */
+    public function imageUrl(): ?string
+    {
+        $raw = trim((string) $this->image_path, " \t\n\r\0\x0B\"'");
+        if ($raw === '') {
+            return null;
+        }
+
+        if (str_starts_with($raw, 'http://') || str_starts_with($raw, 'https://')) {
+            return $raw;
+        }
+
+        $relative = ltrim(str_replace('\\', '/', $raw), '/');
+        if ($relative === '' || preg_match('/^[A-Za-z]:\//', $relative)) {
+            return null;
+        }
+
+        if (is_file(public_path($relative))) {
+            return asset($relative);
+        }
+
+        return null;
+    }
 }

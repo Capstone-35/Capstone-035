@@ -11,7 +11,10 @@
         <h2 class="text-base font-extrabold text-[#1F1A17]">{{ $isEdit ? 'Ubah Menu' : 'Tambah Menu' }}</h2>
     </div>
 
-    <form method="POST" action="{{ $isEdit ? route('manager.products.update', ['product' => $product->id]) : route('manager.products.store') }}" class="space-y-4 text-xs">
+    <form method="POST"
+          action="{{ $isEdit ? route('manager.products.update', ['product' => $product->id]) : route('manager.products.store') }}"
+          enctype="multipart/form-data"
+          class="space-y-4 text-xs">
         @csrf
         @if($isEdit)
             @method('PATCH')
@@ -31,17 +34,17 @@
         <div>
             <label class="block font-bold uppercase text-[#3B2A20] mb-1">Nama Menu *</label>
             <input type="text" name="name" value="{{ old('name', $product->name) }}" required maxlength="80"
-                   placeholder="Contoh: Kopi Susu Gula Aren 774"
+                   placeholder="Contoh: Butterscotch (Best Seller)"
                    class="w-full px-3.5 py-2.5 rounded-xl border border-[#D6CBBC] bg-[#FAF6EF] font-bold text-sm">
         </div>
 
         <div>
             <label class="block font-bold uppercase text-[#3B2A20] mb-1">Deskripsi Singkat Menu</label>
             <textarea name="description" rows="2" maxlength="300" class="w-full px-3.5 py-2 rounded-xl border border-[#D6CBBC] bg-[#FAF6EF]"
-                      placeholder="Espresso ganda dengan susu segar dan sirup gula aren pilihan...">{{ old('description', $product->description) }}</textarea>
+                      placeholder="Deskripsi singkat cita rasa atau komposisi menu...">{{ old('description', $product->description) }}</textarea>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
             <div>
                 <label class="block font-bold uppercase text-[#3B2A20] mb-1">Harga Satuan (Rupiah) *</label>
                 <input type="number" name="price" min="1000" max="5000000" value="{{ old('price', $product->price) }}" required
@@ -49,10 +52,23 @@
             </div>
 
             <div>
-                <label class="block font-bold uppercase text-[#3B2A20] mb-1">Path Gambar (Opsional)</label>
-                <input type="text" name="image_path" maxlength="255" value="{{ old('image_path', $product->image_path) }}"
-                       placeholder="/images/products/kopi-susu.svg"
-                       class="w-full px-3.5 py-2.5 rounded-xl border border-[#D6CBBC] bg-[#FAF6EF]">
+                <label class="block font-bold uppercase text-[#3B2A20] mb-1">Foto Menu (JPG / PNG / WEBP, Maks. 3MB)</label>
+                <input type="file" name="image" id="product-image-input" accept="image/jpeg,image/png,image/webp"
+                       class="w-full px-3 py-2 rounded-xl border border-[#D6CBBC] bg-[#FAF6EF] text-xs file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-[#3B2A20] file:text-[#FAF6EF] file:font-bold file:cursor-pointer hover:file:bg-[#2A1E17]">
+                @php($existingImageUrl = $product->imageUrl())
+                <div id="product-image-preview-wrap" class="mt-2.5 {{ $existingImageUrl ? 'flex' : 'hidden' }} items-center gap-3 p-2.5 rounded-xl bg-[#FAF6EF] border border-[#E6DED2]">
+                    <img id="product-image-preview" src="{{ $existingImageUrl ?? '' }}" alt="Preview Foto Menu"
+                         class="w-16 h-16 rounded-lg object-cover border border-[#D6CBBC] shrink-0">
+                    <div class="min-w-0 space-y-1">
+                        <div class="text-[11px] font-bold text-[#1F1A17]">Preview Foto Menu</div>
+                        @if($isEdit && $existingImageUrl)
+                            <label class="inline-flex items-center gap-1.5 text-[11px] text-[#B91C1C] font-semibold cursor-pointer">
+                                <input type="checkbox" name="remove_image" value="1" class="rounded border-red-400 text-red-600">
+                                <span>Hapus foto saat ini</span>
+                            </label>
+                        @endif
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -92,4 +108,18 @@
         </div>
     </form>
 </div>
+
+<script>
+    document.getElementById('product-image-input')?.addEventListener('change', function (e) {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        const wrap = document.getElementById('product-image-preview-wrap');
+        const img = document.getElementById('product-image-preview');
+        if (img && wrap) {
+            img.src = URL.createObjectURL(file);
+            wrap.classList.remove('hidden');
+            wrap.classList.add('flex');
+        }
+    });
+</script>
 @endsection

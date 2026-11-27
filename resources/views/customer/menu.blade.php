@@ -158,26 +158,34 @@
                         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4">
                             @foreach($featuredProducts as $product)
                                 <div class="bg-white rounded-2xl border-2 border-[#E6DED2] p-4 flex flex-col justify-between shadow-sm relative overflow-hidden">
-                                    <div>
-                                        <div class="flex items-start justify-between gap-2">
-                                            <span class="text-[11px] font-bold uppercase tracking-wider text-[#A9552F] truncate">
-                                                {{ $product->category?->name }}
-                                            </span>
-                                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#FEF3C7] text-[#92400E] text-[10px] font-extrabold whitespace-nowrap shrink-0">
-                                                ★ Andalan
-                                            </span>
+                                    <div class="flex items-start justify-between gap-3">
+                                        <div class="min-w-0 flex-1">
+                                            <div class="flex flex-wrap items-center gap-1.5">
+                                                <span class="text-[11px] font-bold uppercase tracking-wider text-[#A9552F] truncate">
+                                                    {{ $product->category?->name }}
+                                                </span>
+                                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#FEF3C7] text-[#92400E] text-[10px] font-extrabold whitespace-nowrap shrink-0">
+                                                    ★ Andalan
+                                                </span>
+                                            </div>
+
+                                            <a href="{{ route('menu.show', ['product' => $product->slug]) }}" class="block mt-1">
+                                                <h3 class="text-base font-extrabold text-[#1F1A17] hover:text-[#A9552F] transition">
+                                                    {{ $product->name }}
+                                                </h3>
+                                            </a>
+
+                                            @if($product->description)
+                                                <p class="mt-1 text-xs text-[#6F6259] line-clamp-2">
+                                                    {{ $product->description }}
+                                                </p>
+                                            @endif
                                         </div>
-
-                                        <a href="{{ route('menu.show', ['product' => $product->slug]) }}" class="block mt-1">
-                                            <h3 class="text-base font-extrabold text-[#1F1A17] hover:text-[#A9552F] transition">
-                                                {{ $product->name }}
-                                            </h3>
-                                        </a>
-
-                                        @if($product->description)
-                                            <p class="mt-1 text-xs text-[#6F6259] line-clamp-2">
-                                                {{ $product->description }}
-                                            </p>
+                                        @if($product->imageUrl())
+                                            <a href="{{ route('menu.show', ['product' => $product->slug]) }}" class="shrink-0">
+                                                <img src="{{ $product->imageUrl() }}" alt="{{ $product->name }}" loading="lazy"
+                                                     class="w-20 h-20 sm:w-24 sm:h-24 rounded-xl object-cover border border-[#E6DED2] bg-[#FAF6EF]">
+                                            </a>
                                         @endif
                                     </div>
 
@@ -233,28 +241,36 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4">
                         @foreach($categoryProducts as $product)
                             <div class="bg-white rounded-2xl border border-[#E6DED2] p-4 flex flex-col justify-between shadow-sm {{ !$product->is_available ? 'opacity-65' : '' }}">
-                                <div>
-                                    <div class="flex items-start justify-between gap-2">
-                                        <span class="text-[11px] font-bold uppercase tracking-wider text-[#A9552F] truncate">
-                                            {{ $product->category?->name }}
-                                        </span>
-                                        @if(!$product->is_available)
-                                            <span class="px-2 py-0.5 rounded-full bg-[#FEE2E2] text-[#991B1B] text-[11px] font-bold whitespace-nowrap shrink-0">
-                                                Habis
+                                <div class="flex items-start justify-between gap-3">
+                                    <div class="min-w-0 flex-1">
+                                        <div class="flex flex-wrap items-center gap-1.5">
+                                            <span class="text-[11px] font-bold uppercase tracking-wider text-[#A9552F] truncate">
+                                                {{ $product->category?->name }}
                                             </span>
+                                            @if(!$product->is_available)
+                                                <span class="px-2 py-0.5 rounded-full bg-[#FEE2E2] text-[#991B1B] text-[11px] font-bold whitespace-nowrap shrink-0">
+                                                    Habis
+                                                </span>
+                                            @endif
+                                        </div>
+
+                                        <a href="{{ route('menu.show', ['product' => $product->slug]) }}" class="block mt-1">
+                                            <h3 class="text-base font-extrabold text-[#1F1A17] hover:text-[#A9552F] transition">
+                                                {{ $product->name }}
+                                            </h3>
+                                        </a>
+
+                                        @if($product->description)
+                                            <p class="mt-1 text-xs text-[#6F6259] line-clamp-2">
+                                                {{ $product->description }}
+                                            </p>
                                         @endif
                                     </div>
-
-                                    <a href="{{ route('menu.show', ['product' => $product->slug]) }}" class="block mt-1">
-                                        <h3 class="text-base font-extrabold text-[#1F1A17] hover:text-[#A9552F] transition">
-                                            {{ $product->name }}
-                                        </h3>
-                                    </a>
-
-                                    @if($product->description)
-                                        <p class="mt-1 text-xs text-[#6F6259] line-clamp-2">
-                                            {{ $product->description }}
-                                        </p>
+                                    @if($product->imageUrl())
+                                        <a href="{{ route('menu.show', ['product' => $product->slug]) }}" class="shrink-0">
+                                            <img src="{{ $product->imageUrl() }}" alt="{{ $product->name }}" loading="lazy"
+                                                 class="w-20 h-20 sm:w-24 sm:h-24 rounded-xl object-cover border border-[#E6DED2] bg-[#FAF6EF]">
+                                        </a>
                                     @endif
                                 </div>
 

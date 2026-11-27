@@ -659,6 +659,7 @@ class ManagerController extends Controller
             'name' => ['required', 'string', 'max:80'],
             'description' => ['nullable', 'string', 'max:300'],
             'price' => ['required', 'integer', 'min:1000', 'max:5000000'],
+            'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:3072'],
             'image_path' => ['nullable', 'string', 'max:255'],
             'is_available' => ['nullable', 'boolean'],
             'is_featured' => ['nullable', 'boolean'],
@@ -666,6 +667,7 @@ class ManagerController extends Controller
         ]);
 
         $slug = Str::slug($validated['name']).'-'.strtolower(Str::random(4));
+        $imagePath = $this->storeProductImage($request, $slug, $validated['image_path'] ?? null);
 
         Product::query()->create([
             'category_id' => (int) $validated['category_id'],
@@ -673,7 +675,7 @@ class ManagerController extends Controller
             'slug' => $slug,
             'description' => $validated['description'] ?? null,
             'price' => (int) $validated['price'],
-            'image_path' => $validated['image_path'] ?: '/images/products/default-coffee.svg',
+            'image_path' => $imagePath ?: '/images/products/default-coffee.svg',
             'is_available' => $request->boolean('is_available', true),
             'is_featured' => $request->boolean('is_featured', false),
             'is_active' => $request->boolean('is_active', true),
@@ -699,18 +701,37 @@ class ManagerController extends Controller
             'name' => ['required', 'string', 'max:80'],
             'description' => ['nullable', 'string', 'max:300'],
             'price' => ['required', 'integer', 'min:1000', 'max:5000000'],
+            'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:3072'],
             'image_path' => ['nullable', 'string', 'max:255'],
+            'remove_image' => ['nullable', 'boolean'],
             'is_available' => ['nullable', 'boolean'],
             'is_featured' => ['nullable', 'boolean'],
             'is_active' => ['nullable', 'boolean'],
         ]);
+
+        $imagePath = $product->image_path;
+
+        if ($request->boolean('remove_image')) {
+            $this->deleteLocalProductImage($product->image_path);
+            $imagePath = null;
+        }
+
+        if ($request->hasFile('image')) {
+            $this->deleteLocalProductImage($product->image_path);
+            $imagePath = $this->storeProductImage($request, $product->slug);
+        } elseif (! $request->boolean('remove_image') && filled($validated['image_path'] ?? null)) {
+            $candidate = trim((string) $validated['image_path'], " \t\n\r\0\x0B\"'");
+            if (! preg_match('/^[A-Za-z]:[\\\\\/]/', $candidate)) {
+                $imagePath = $candidate;
+            }
+        }
 
         $product->update([
             'category_id' => (int) $validated['category_id'],
             'name' => trim(strip_tags($validated['name'])),
             'description' => $validated['description'] ?? null,
             'price' => (int) $validated['price'],
-            'image_path' => $validated['image_path'] ?: $product->image_path,
+            'image_path' => $imagePath,
             'is_available' => $request->boolean('is_available', false),
             'is_featured' => $request->boolean('is_featured', false),
             'is_active' => $request->boolean('is_active', false),
@@ -718,6 +739,45 @@ class ManagerController extends Controller
 
         return redirect()->route('manager.products.index')
             ->with('toast_success', "Menu '{$product->name}' berhasil diperbarui.");
+    }
+
+    protected function storeProductImage(Request $request, string $slug, ?string $fallbackPath = null): ?string
+    {
+        if ($request->hasFile('image')) {
+            $file = $request->file('image');
+            $dir = public_path('images'.DIRECTORY_SEPARATOR.'products');
+            if (! is_dir($dir)) {
+                mkdir($dir, 0755, true);
+            }
+            $ext = strtolower($file->getClientOriginalExtension() ?: $file->extension() ?: 'jpg');
+            $filename = Str::slug($slug).'-'.strtolower(Str::random(6)).'.'.$ext;
+            $targetPath = $dir.DIRECTORY_SEPARATOR.$filename;
+            file_put_contents($targetPath, (string) file_get_contents($file->getRealPath()));
+
+            return '/images/products/'.$filename;
+        }
+
+        $candidate = trim((string) $fallbackPath, " \t\n\r\0\x0B\"'");
+        if ($candidate !== '' && ! preg_match('/^[A-Za-z]:[\\\\\/]/', $candidate)) {
+            return $candidate;
+        }
+
+        return null;
+    }
+
+    protected function deleteLocalProductImage(?string $imagePath): void
+    {
+        if (! $imagePath) {
+            return;
+        }
+        $normalized = '/'.ltrim(str_replace('\\', '/', trim($imagePath)), '/');
+        if (! str_starts_with($normalized, '/images/products/')) {
+            return;
+        }
+        $fullPath = public_path(ltrim($normalized, '/'));
+        if (is_file($fullPath)) {
+            @unlink($fullPath);
+        }
     }
 
     public function productsDestroy(Product $product): RedirectResponse
