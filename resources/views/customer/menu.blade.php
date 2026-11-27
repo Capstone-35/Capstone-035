@@ -68,7 +68,7 @@
                     <a href="#category-menu-andalan"
                        data-category-chip="menu-andalan"
                        aria-current="{{ $isFeaturedSelected ? 'true' : 'false' }}"
-                       class="category-chip min-h-[44px] px-4 py-2 rounded-xl border text-xs font-bold whitespace-nowrap transition inline-flex items-center gap-1.5 shrink-0 {{ $isFeaturedSelected ? 'bg-[#3B2A20] text-[#FAF6EF] border-[#3B2A20] shadow-xs' : 'bg-white border-[#E6DED2] text-[#6F6259] hover:border-[#3B2A20]/40 hover:text-[#1F1A17]' }}">
+                       class="category-chip min-h-[40px] px-4 py-1.5 rounded-full border text-xs font-bold whitespace-nowrap transition inline-flex items-center gap-1.5 shrink-0 {{ $isFeaturedSelected ? 'bg-[#3B2A20] text-[#FAF6EF] border-[#3B2A20] shadow-xs' : 'bg-white border-[#D6CBBC] text-[#6F6259] hover:border-[#3B2A20]/50 hover:text-[#1F1A17]' }}">
                         <svg class="w-3.5 h-3.5 text-[#A9552F] shrink-0" fill="currentColor" viewBox="0 0 20 20">
                             <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                         </svg>
@@ -83,7 +83,7 @@
                        data-category-chip="{{ $category->slug }}"
                        data-category-id="{{ $category->id }}"
                        aria-current="{{ $isSelected ? 'true' : 'false' }}"
-                       class="category-chip min-h-[44px] px-4 py-2 rounded-xl border text-xs font-bold whitespace-nowrap transition inline-flex items-center gap-1.5 shrink-0 {{ $isSelected ? 'bg-[#3B2A20] text-[#FAF6EF] border-[#3B2A20] shadow-xs' : 'bg-white border-[#E6DED2] text-[#6F6259] hover:border-[#3B2A20]/40 hover:text-[#1F1A17]' }}">
+                       class="category-chip min-h-[40px] px-4 py-1.5 rounded-full border text-xs font-bold whitespace-nowrap transition inline-flex items-center gap-1.5 shrink-0 {{ $isSelected ? 'bg-[#3B2A20] text-[#FAF6EF] border-[#3B2A20] shadow-xs' : 'bg-white border-[#D6CBBC] text-[#6F6259] hover:border-[#3B2A20]/50 hover:text-[#1F1A17]' }}">
                         <span>{{ $category->name }}</span>
                     </a>
                 @endforeach
@@ -155,62 +155,57 @@
                     @endif
 
                     @if(($featuredProducts ?? collect())->isNotEmpty())
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4">
+                        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4 lg:gap-5">
                             @foreach($featuredProducts as $product)
-                                <div class="bg-white rounded-2xl border-2 border-[#E6DED2] p-4 flex flex-col justify-between shadow-sm relative overflow-hidden">
-                                    <div class="flex items-start justify-between gap-3">
-                                        <div class="min-w-0 flex-1">
-                                            <div class="flex flex-wrap items-center gap-1.5">
-                                                <span class="text-[11px] font-bold uppercase tracking-wider text-[#A9552F] truncate">
-                                                    {{ $product->category?->name }}
-                                                </span>
-                                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#FEF3C7] text-[#92400E] text-[10px] font-extrabold whitespace-nowrap shrink-0">
-                                                    ★ Andalan
-                                                </span>
-                                            </div>
-
-                                            <a href="{{ route('menu.show', ['product' => $product->slug]) }}" class="block mt-1">
-                                                <h3 class="text-base font-extrabold text-[#1F1A17] hover:text-[#A9552F] transition">
-                                                    {{ $product->name }}
-                                                </h3>
-                                            </a>
-
-                                            @if($product->description)
-                                                <p class="mt-1 text-xs text-[#6F6259] line-clamp-2">
-                                                    {{ $product->description }}
-                                                </p>
-                                            @endif
-                                        </div>
-                                        @if($product->imageUrl())
-                                            <a href="{{ route('menu.show', ['product' => $product->slug]) }}" class="shrink-0">
+                                <div class="group flex flex-col">
+                                    <div class="relative aspect-square w-full rounded-2xl bg-[#F2ECE1] border border-[#E6DED2] overflow-hidden shadow-xs">
+                                        <a href="{{ route('menu.show', ['product' => $product->slug]) }}" class="block w-full h-full">
+                                            @if($product->imageUrl())
                                                 <img src="{{ $product->imageUrl() }}" alt="{{ $product->name }}" loading="lazy"
-                                                     class="w-20 h-20 sm:w-24 sm:h-24 rounded-xl object-cover border border-[#E6DED2] bg-[#FAF6EF]">
-                                            </a>
-                                        @endif
-                                    </div>
+                                                     class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
+                                            @else
+                                                <div class="w-full h-full flex flex-col items-center justify-center p-4 text-center bg-gradient-to-br from-[#F7F1E8] to-[#EFE6D8]">
+                                                    <img src="{{ asset('images/logo-774.png') }}" alt="" aria-hidden="true"
+                                                         class="w-11 h-11 rounded-full object-cover opacity-20">
+                                                </div>
+                                            @endif
+                                        </a>
 
-                                    <div class="mt-4 pt-3 border-t border-[#F2ECE1] flex flex-wrap items-center justify-between gap-2">
-                                        <div class="text-base font-extrabold text-[#1F1A17] tabular-nums whitespace-nowrap">
-                                            {{ $product->formattedPrice() }}
-                                        </div>
+                                        <span class="pointer-events-none absolute top-0 left-0 px-2.5 py-1 rounded-br-xl bg-[#FEF3C7]/95 text-[#92400E] text-[10px] font-extrabold tracking-tight shadow-xs">
+                                            ★ Andalan
+                                        </span>
 
                                         @if($product->is_available)
-                                            <div class="flex items-center gap-1.5 shrink-0">
-                                                <a href="{{ route('menu.show', ['product' => $product->slug]) }}"
-                                                   class="min-h-[42px] px-2.5 inline-flex items-center justify-center rounded-xl border border-[#D6CBBC] text-xs font-semibold text-[#3B2A20] hover:bg-[#F2ECE1] whitespace-nowrap">
-                                                    Catatan
-                                                </a>
-                                                <form method="POST" action="{{ route('cart.items.store') }}" onsubmit="this.querySelector('button[type=submit]').disabled=true;">
-                                                    @csrf
-                                                    <input type="hidden" name="product_id" value="{{ $product->id }}">
-                                                    <input type="hidden" name="quantity" value="1">
-                                                    <button type="submit" class="min-h-[42px] px-3.5 inline-flex items-center justify-center rounded-xl bg-[#3B2A20] text-[#FAF6EF] text-xs font-bold hover:bg-[#2A1E17] transition whitespace-nowrap">
-                                                        + Tambah
-                                                    </button>
-                                                </form>
-                                            </div>
+                                            <form method="POST" action="{{ route('cart.items.store') }}"
+                                                  onsubmit="this.querySelector('button[type=submit]').disabled=true;"
+                                                  class="absolute bottom-2.5 right-2.5 z-10">
+                                                @csrf
+                                                <input type="hidden" name="product_id" value="{{ $product->id }}">
+                                                <input type="hidden" name="quantity" value="1">
+                                                <button type="submit"
+                                                        aria-label="Tambah {{ $product->name }} ke keranjang"
+                                                        class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white text-[#3B2A20] border-2 border-[#3B2A20] shadow-md hover:bg-[#3B2A20] hover:text-[#FAF6EF] active:scale-95 transition flex items-center justify-center cursor-pointer">
+                                                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.75">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14m-7-7h14" />
+                                                    </svg>
+                                                </button>
+                                            </form>
                                         @endif
                                     </div>
+
+                                    <a href="{{ route('menu.show', ['product' => $product->slug]) }}" class="mt-2 block flex-1">
+                                        <div class="text-sm sm:text-base font-extrabold text-[#1F1A17] tabular-nums leading-tight">
+                                            {{ $product->formattedPrice() }}
+                                        </div>
+                                        <h3 class="mt-1 text-xs sm:text-sm font-semibold text-[#1F1A17] leading-snug line-clamp-2 group-hover:text-[#A9552F] transition">
+                                            {{ $product->name }}
+                                        </h3>
+                                        <div class="mt-1.5 flex flex-wrap items-center gap-1">
+                                            <span class="px-2 py-0.5 rounded-md bg-[#F2ECE1] text-[10px] font-semibold text-[#6F6259] truncate max-w-full">
+                                                {{ $product->category?->name }}
+                                            </span>
+                                        </div>
+                                    </a>
                                 </div>
                             @endforeach
                         </div>
@@ -238,68 +233,65 @@
                         </span>
                     </div>
 
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4">
+                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4 lg:gap-5">
                         @foreach($categoryProducts as $product)
-                            <div class="bg-white rounded-2xl border border-[#E6DED2] p-4 flex flex-col justify-between shadow-sm {{ !$product->is_available ? 'opacity-65' : '' }}">
-                                <div class="flex items-start justify-between gap-3">
-                                    <div class="min-w-0 flex-1">
-                                        <div class="flex flex-wrap items-center gap-1.5">
-                                            <span class="text-[11px] font-bold uppercase tracking-wider text-[#A9552F] truncate">
-                                                {{ $product->category?->name }}
-                                            </span>
-                                            @if(!$product->is_available)
-                                                <span class="px-2 py-0.5 rounded-full bg-[#FEE2E2] text-[#991B1B] text-[11px] font-bold whitespace-nowrap shrink-0">
-                                                    Habis
-                                                </span>
-                                            @endif
-                                        </div>
-
-                                        <a href="{{ route('menu.show', ['product' => $product->slug]) }}" class="block mt-1">
-                                            <h3 class="text-base font-extrabold text-[#1F1A17] hover:text-[#A9552F] transition">
-                                                {{ $product->name }}
-                                            </h3>
-                                        </a>
-
-                                        @if($product->description)
-                                            <p class="mt-1 text-xs text-[#6F6259] line-clamp-2">
-                                                {{ $product->description }}
-                                            </p>
-                                        @endif
-                                    </div>
-                                    @if($product->imageUrl())
-                                        <a href="{{ route('menu.show', ['product' => $product->slug]) }}" class="shrink-0">
+                            <div class="group flex flex-col {{ !$product->is_available ? 'opacity-60' : '' }}">
+                                <div class="relative aspect-square w-full rounded-2xl bg-[#F2ECE1] border border-[#E6DED2] overflow-hidden shadow-xs">
+                                    <a href="{{ route('menu.show', ['product' => $product->slug]) }}" class="block w-full h-full">
+                                        @if($product->imageUrl())
                                             <img src="{{ $product->imageUrl() }}" alt="{{ $product->name }}" loading="lazy"
-                                                 class="w-20 h-20 sm:w-24 sm:h-24 rounded-xl object-cover border border-[#E6DED2] bg-[#FAF6EF]">
-                                        </a>
-                                    @endif
-                                </div>
+                                                 class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
+                                        @else
+                                            <div class="w-full h-full flex flex-col items-center justify-center p-4 text-center bg-gradient-to-br from-[#F7F1E8] to-[#EFE6D8]">
+                                                <img src="{{ asset('images/logo-774.png') }}" alt="" aria-hidden="true"
+                                                     class="w-11 h-11 rounded-full object-cover opacity-20">
+                                            </div>
+                                        @endif
+                                    </a>
 
-                                <div class="mt-4 pt-3 border-t border-[#F2ECE1] flex flex-wrap items-center justify-between gap-2">
-                                    <div class="text-base font-extrabold text-[#1F1A17] tabular-nums whitespace-nowrap">
-                                        {{ $product->formattedPrice() }}
-                                    </div>
+                                    @if(!$product->is_available)
+                                        <span class="pointer-events-none absolute top-0 left-0 px-2.5 py-1 rounded-br-xl bg-[#FEE2E2]/95 text-[#991B1B] text-[10px] font-extrabold shadow-xs">
+                                            Habis
+                                        </span>
+                                    @elseif($product->is_featured)
+                                        <span class="pointer-events-none absolute top-0 left-0 px-2.5 py-1 rounded-br-xl bg-[#FEF3C7]/95 text-[#92400E] text-[10px] font-extrabold shadow-xs">
+                                            ★ Andalan
+                                        </span>
+                                    @endif
 
                                     @if($product->is_available)
-                                        <div class="flex items-center gap-1.5 shrink-0">
-                                            <a href="{{ route('menu.show', ['product' => $product->slug]) }}"
-                                               class="min-h-[42px] px-2.5 inline-flex items-center justify-center rounded-xl border border-[#D6CBBC] text-xs font-semibold text-[#3B2A20] hover:bg-[#F2ECE1] whitespace-nowrap">
-                                                Catatan
-                                            </a>
-                                            <form method="POST" action="{{ route('cart.items.store') }}" onsubmit="this.querySelector('button[type=submit]').disabled=true;">
-                                                @csrf
-                                                <input type="hidden" name="product_id" value="{{ $product->id }}">
-                                                <input type="hidden" name="quantity" value="1">
-                                                <button type="submit" class="min-h-[42px] px-3.5 inline-flex items-center justify-center rounded-xl bg-[#3B2A20] text-[#FAF6EF] text-xs font-bold hover:bg-[#2A1E17] transition whitespace-nowrap">
-                                                    + Tambah
-                                                </button>
-                                            </form>
-                                        </div>
+                                        <form method="POST" action="{{ route('cart.items.store') }}"
+                                              onsubmit="this.querySelector('button[type=submit]').disabled=true;"
+                                              class="absolute bottom-2.5 right-2.5 z-10">
+                                            @csrf
+                                            <input type="hidden" name="product_id" value="{{ $product->id }}">
+                                            <input type="hidden" name="quantity" value="1">
+                                            <button type="submit"
+                                                    aria-label="Tambah {{ $product->name }} ke keranjang"
+                                                    class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white text-[#3B2A20] border-2 border-[#3B2A20] shadow-md hover:bg-[#3B2A20] hover:text-[#FAF6EF] active:scale-95 transition flex items-center justify-center cursor-pointer">
+                                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.75">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14m-7-7h14" />
+                                                </svg>
+                                            </button>
+                                        </form>
                                     @else
-                                        <button type="button" disabled class="min-h-[42px] px-3.5 rounded-xl bg-gray-200 text-gray-500 text-xs font-bold cursor-not-allowed whitespace-nowrap">
-                                            Tidak Tersedia
+                                        <button type="button" disabled aria-label="Stok habis"
+                                                class="absolute bottom-2.5 right-2.5 z-10 w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gray-200/95 text-gray-400 border border-gray-300 flex items-center justify-center cursor-not-allowed">
+                                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
                                         </button>
                                     @endif
                                 </div>
+
+                                <a href="{{ route('menu.show', ['product' => $product->slug]) }}" class="mt-2 block flex-1">
+                                    <div class="text-sm sm:text-base font-extrabold text-[#1F1A17] tabular-nums leading-tight">
+                                        {{ $product->formattedPrice() }}
+                                    </div>
+                                    <h3 class="mt-1 text-xs sm:text-sm font-semibold text-[#1F1A17] leading-snug line-clamp-2 group-hover:text-[#A9552F] transition">
+                                        {{ $product->name }}
+                                    </h3>
+                                </a>
                             </div>
                         @endforeach
                     </div>
